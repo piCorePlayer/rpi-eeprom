@@ -2,6 +2,14 @@
 
 # Raspberry Pi4 boot EEPROM updater.
 
+. /home/tc/www/cgi-bin/pcp-functions
+
+FIRMWARE_ROOT=$TCEMNT/tce/rpi-eeprom/firmware
+FIRMWARE_BACKUP_DIR=$TCEMNT/tce/rpi-eeprom/firmware/backup
+BOOTFS=$BOOTMNT
+
+pcp_mount_bootpart_nohtml
+
 set -e
 
 script_dir=$(cd "$(dirname "$0")" && pwd)
