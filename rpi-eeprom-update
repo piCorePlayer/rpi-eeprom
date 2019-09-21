@@ -10,6 +10,20 @@ BOOTFS=$BOOTMNT
 
 pcp_mount_bootpart_nohtml
 
+if [ ! -f ${PACKAGEDIR}/rpi-vc.tcz ]; then
+	echo "rpi-vc extension is required for this tool"
+	exit 1
+elif [ ! -f /usr/local/bin/vcgencmd ]; then
+	sudo -u tc tce-load -i rpi-vc.tcz
+fi
+
+if [ ! -f ${PACKAGEDIR}/python3.6.tcz ]; then
+	echo "Python3.6 extension is required for this tool"
+	exit 1
+elif [ ! -f /usr/local/bin/python3 ]; then
+	sudo -u tc tce-load -i python3.6.tcz
+fi
+
 set -e
 
 script_dir=$(cd "$(dirname "$0")" && pwd)
