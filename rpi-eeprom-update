@@ -24,6 +24,8 @@ elif [ ! -f /usr/local/bin/python3 ]; then
 	sudo -u tc tce-load -i python3.6.tcz
 fi
 
+export PATH=$PATH:$TCEMNT/tce/rpi-eeprom/firmware
+
 set -e
 
 script_dir=$(cd "$(dirname "$0")" && pwd)
