@@ -4,9 +4,7 @@
 
 . /var/www/cgi-bin/pcp-functions
 
-FIRMWARE_ROOT=$TCEMNT/tce/rpi-eeprom/firmware
 FIRMWARE_BACKUP_DIR=$TCEMNT/tce/rpi-eeprom/firmware/backup
-RECOVERY_BIN=${FIRMWARE_ROOT}/beta/recovery.bin
 BOOTFS=$BOOTMNT
 
 pcp_mount_bootpart_nohtml
