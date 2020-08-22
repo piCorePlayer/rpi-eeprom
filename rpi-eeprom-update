@@ -16,11 +16,13 @@ elif [ ! -f /usr/local/bin/vcgencmd ]; then
 	sudo -u tc tce-load -i rpi-vc.tcz
 fi
 
-if [ ! -f ${PACKAGEDIR}/python3.6.tcz ]; then
-	echo "Python3.6 extension is required for this tool"
+[ -f ${PACKAGEDIR}/python3.6.tcz ] && PYTHON3PKG=python3.6.tcz
+[ -f ${PACKAGEDIR}/python3.8.tcz ] && PYTHON3PKG=python3.8.tcz
+if [ ! -f ${PACKAGEDIR}/$PYTHON3PKG ]; then
+	echo "$PYTHON3PKG extension is required for this tool"
 	exit 1
 elif [ ! -f /usr/local/bin/python3 ]; then
-	sudo -u tc tce-load -i python3.6.tcz
+	sudo -u tc tce-load -i $PYTHON3PKG
 fi
 
 export PATH=$PATH:$TCEMNT/tce/rpi-eeprom/firmware
