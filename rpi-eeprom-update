@@ -7,7 +7,7 @@
 FIRMWARE_BACKUP_DIR=$TCEMNT/tce/rpi-eeprom/firmware/backup
 BOOTFS=$BOOTMNT
 
-pcp_mount_bootpart_nohtml
+pcp_mount_bootpart_nohtml >/dev/null 2>&1
 
 if [ ! -f ${PACKAGEDIR}/rpi-vc.tcz ]; then
 	echo "rpi-vc extension is required for this tool"
