@@ -1,0 +1,56 @@
+name: Release Extension
+
+on:
+  push:
+    tags:
+    - 'v*'
+
+jobs:
+  build:
+    name: Create Extension
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          path: temp/usr/local/bin
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.RPI_EEPROM_RELEASE }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Create Extension
+        id: make_tcz
+        run: |
+            mksquashfs ./temp rpi-eeprom.tcz -e .git -e .github -e .gitignore 
+            md5sum rpi-eeprom.tcz > rpi-eeprom.tcz.md5.txt
+
+      - name: List Extension
+        run: unsquashfs -ll rpi-eeprom.tcz
+      - name: Upload Release Asset
+        id: upload-release-asset-tcz
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.RPI_EEPROM_RELEASE }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./rpi-eeprom.tcz
+          asset_name: rpi-eeprom.tcz
+          asset_content_type: application/data
+      - name: Upload Release Asset
+        id: upload-release-asset-md5
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.RPI_EEPROM_RELEASE }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./rpi-eeprom.tcz.md5.txt
+          asset_name: rpi-eeprom.tcz.md5.txt
+          asset_content_type: application/data
