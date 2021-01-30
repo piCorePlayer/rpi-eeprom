@@ -48,8 +48,8 @@ else
    FIRMWARE_ROOT="${script_dir}/firmware"
 fi
 
-# May be used to select beta or stable releases instead of the default critical updates.
-FIRMWARE_RELEASE_STATUS=${FIRMWARE_RELEASE_STATUS:-critical}
+# Selects the release sub-directory
+FIRMWARE_RELEASE_STATUS=${FIRMWARE_RELEASE_STATUS:-default}
 FIRMWARE_IMAGE_DIR=${FIRMWARE_IMAGE_DIR:-${FIRMWARE_ROOT}/${FIRMWARE_RELEASE_STATUS}}
 FIRMWARE_BACKUP_DIR=${FIRMWARE_BACKUP_DIR:-/var/lib/raspberrypi/bootloader/backup}
 ENABLE_VL805_UPDATES=${ENABLE_VL805_UPDATES:-1}
@@ -58,6 +58,9 @@ RECOVERY_BIN=${RECOVERY_BIN:-${FIRMWARE_ROOT}/${FIRMWARE_RELEASE_STATUS}/recover
 BOOTFS=${BOOTFS:-/boot}
 VCMAILBOX=${VCMAILBOX:-/opt/vc/bin/vcmailbox}
 CM4_ENABLE_RPI_EEPROM_UPDATE=${CM4_ENABLE_RPI_EEPROM_UPDATE:-0}
+RPI_EEPROM_UPDATE_CONFIG_TOOL="${RPI_EEPROM_UPDATE_CONFIG_TOOL:-raspi-config}"
+
+DT_BOOTLOADER_TS=${DT_BOOTLOADER_TS:-/proc/device-tree/chosen/bootloader/build-timestamp}
 
 EXIT_SUCCESS=0
 EXIT_UPDATE_REQUIRED=1
@@ -127,6 +130,34 @@ die() {
    exit ${EXIT_FAILED}
 }
 
+getBootloaderConfig() {
+   # Prefer extracting bootloader's config from DT.
+   #
+   # In order to find the right nvmem device, we build the sysfs path of the
+   # bootloader reserved memory DT node to then match that path against all
+   # nvmem device's ofnode path.
+   #
+   # If the path isn't there, default to using vcgencmd.
+
+   local blconfig_alias="/sys/firmware/devicetree/base/aliases/blconfig"
+   local blconfig_nvmem_path=""
+
+   if [ -f "${blconfig_alias}" ]; then
+      local blconfig_ofnode_path="/sys/firmware/devicetree/base"$(strings "${blconfig_alias}")""
+      local blconfig_ofnode_link=$(find -L /sys/bus/nvmem -samefile "${blconfig_ofnode_path}" 2>/dev/null)
+
+      if [ -e "${blconfig_ofnode_link}" ]; then
+         blconfig_nvmem_path=$(dirname "${blconfig_ofnode_link}")
+      fi
+   fi
+
+   if [ -n "${blconfig_nvmem_path}" ]; then
+      cat "${blconfig_nvmem_path}"/nvmem
+   else
+      vcgencmd bootloader_config
+   fi
+}
+
 prepareImage()
 {
    [ -f "${BOOTLOADER_UPDATE_IMAGE}" ] || die "EEPROM image '${BOOTLOADER_UPDATE_IMAGE}' not found"
@@ -137,7 +168,7 @@ prepareImage()
    mkdir -p "${FIRMWARE_BACKUP_DIR}"
 
    # Backup the configuration of the currently loaded bootloader
-   vcgencmd bootloader_config > "${TMP_EEPROM_CONFIG}"
+   getBootloaderConfig > "${TMP_EEPROM_CONFIG}"
    backup="${FIRMWARE_BACKUP_DIR}/pieeprom-backup-$(date +%Y%m%d-%H%M%S).conf"
    cp -f "${TMP_EEPROM_CONFIG}" "${backup}"
 
@@ -292,7 +323,10 @@ applyUpdate() {
 # this via flashrom to avoid unnecessary audio glitches.
 BOOTLOADER_CURRENT_VERSION=
 getBootloaderCurrentVersion() {
-   if vcgencmd bootloader_version | grep -q timestamp; then
+   if [ -f "${DT_BOOTLOADER_TS}" ]; then
+      # Prefer device-tree to vcgencmd
+      BOOTLOADER_CURRENT_VERSION=$(printf "%d" "0x$(od "${DT_BOOTLOADER_TS}" -v -An -t x1 | tr -d ' ' )")
+   elif vcgencmd bootloader_version | grep -q timestamp; then
       BOOTLOADER_CURRENT_VERSION=$(vcgencmd bootloader_version | grep timestamp | awk '{print $2}')
       if [ "${BOOTLOADER_CURRENT_VERSION}" = "0" ]; then
          # If a timestamp of zero is returned then it's new firmware but an
@@ -316,7 +350,7 @@ BOOTLOADER_UPDATE_VERSION=0
 getBootloaderUpdateVersion() {
    BOOTLOADER_UPDATE_VERSION=0
    match=".*/pieeprom-[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9].bin"
-   latest="$(find "${FIRMWARE_IMAGE_DIR}" -maxdepth 1 -type f -size "${EEPROM_SIZE}c" -regex "${match}" | sort -r | head -n1)"
+   latest="$(find "${FIRMWARE_IMAGE_DIR}/" -maxdepth 1 -type f -size "${EEPROM_SIZE}c" -regex "${match}" | sort -r | head -n1)"
    if [ -f "${latest}" ]; then
       BOOTLOADER_UPDATE_VERSION=$(strings "${latest}" | grep BUILD_TIMESTAMP | sed 's/.*=//g')
       BOOTLOADER_UPDATE_IMAGE="${latest}"
@@ -357,22 +391,26 @@ checkDependencies() {
       HAVE_VL805_EEPROM=0
    fi
 
-   if ! command -v vcgencmd  > /dev/null; then
-      die "vcgencmd not found. On Debian, try installing the libraspberrypi-bin package."
+   # vcgencmd bootloader_version is deprecated. Use device-tree if available to
+   # reduce the number of dependencies on VCHI.
+   if ! [ -f "${DT_BOOTLOADER_TS}" ]; then
+      if ! command -v vcgencmd > /dev/null; then
+         die "vcgencmd not found. On Debian, try installing the libraspberrypi-bin package."
+      fi
    fi
 
-   if [ ! -d "${FIRMWARE_IMAGE_DIR}" ]; then
+   if [ ! -e "${FIRMWARE_IMAGE_DIR}" ]; then
       die "EEPROM updates directory ${FIRMWARE_IMAGE_DIR} not found."
    fi
 
    # If a board revision specific firmware directory is defined then use that
    # in preference to the generic directory.
-   if [ -d "${FIRMWARE_IMAGE_DIR}-${BOARD_INFO}" ]; then
+   if [ -e "${FIRMWARE_IMAGE_DIR}-${BOARD_INFO}" ]; then
       FIRMWARE_IMAGE_DIR="${FIRMWARE_IMAGE_DIR}-${BOARD_INFO}"
    fi
 
-   if vcgencmd bootloader_config | grep -qi "Command not registered"; then
-      die "vcgencmd: 'bootloader_config' command not supported. Please update VC firmware and reboot."
+   if ! getBootloaderConfig > /dev/null; then
+      die "Unable to get bootloader config, please update VC firmware and reboot."
    fi
 
    if ! command -v sha256sum > /dev/null; then
@@ -478,26 +516,39 @@ those devices to stop working until after the system is reboot.
 
 FIRMWARE_RELEASE_STATUS
 
-Specifies the release status of the firmware to apply. The default is 'critical'.
+Specifies the release status of the firmware to apply.
 
 Before selecting a firmware release directory this script checks whether there
-is a board revision specific variant e.g. critical-c03111. If present then the
+is a board revision specific variant e.g. default-c03111. If present then the
 board-revision specific version is used in preference.
 
 Release status:
+Bootloader releases follow a pipeline where images are released to the 'beta'
+directory first. The binaries are then promoted to 'latest' and finally 'default'
+so the 'default' binary is always the most tested release.
 
-critical: The latest production release plus important security or hardware compatibility bug fixes.
+default:
+The default bootloader image which is updated once new features in
+'latest' are stable or for critical hardware or security updates.
 
-stable: Contains new features that have already undergone some beta testing.
-These are candidates for new production releases.
+Raspberry Pi OS automatically updates the bootloader when a newer 'default' image
+is available following an APT update to the rpi-eeprom package.
 
-beta: New features, bug fixes for development/test purposes. Use at your own
-risk!
+latest:
+Contains the latest features which have undergone testing via the 'beta'
+release. The configuration parameters are stable.
+
+beta:
+Contains experimental features and bug fixes. Configuration parameters may
+change in subsequent 'beta' releases.
 
 As far as rpi-eeprom-update is concerned FIRMWARE_RELEASE_STATUS is just
 the subdirectory mapping under ${FIRMWARE_ROOT}. Therefore, custom release
 directories are supported by creating the relevant directory and changing
 the FIRMWARE_RELEASE_STATUS environment variable.
+
+The 'default' and 'latest' release names are symlinks to the old directory
+names of 'critical' / 'stable'.
 
 Examples:
 To extract the configuration file from an EEPROM image:
@@ -520,6 +571,9 @@ EOF
 
 printVersions()
 {
+   echo "Checking for updates in ${FIRMWARE_IMAGE_DIR}"
+   echo "Use ${RPI_EEPROM_UPDATE_CONFIG_TOOL} to select either the default-production release or latest update."
+
    if [ "${ACTION_UPDATE_BOOTLOADER}" = 1 ]; then
       echo "BOOTLOADER: update available"
    else
@@ -528,7 +582,7 @@ printVersions()
 
    echo "CURRENT: $(date -u "-d@${BOOTLOADER_CURRENT_VERSION}") (${BOOTLOADER_CURRENT_VERSION})"
    echo " LATEST: $(date -u "-d@${BOOTLOADER_UPDATE_VERSION}") (${BOOTLOADER_UPDATE_VERSION})"
-   echo " FW DIR: ${FIRMWARE_IMAGE_DIR}"
+   echo "RELEASE: ${FIRMWARE_RELEASE_STATUS}"
 
    if [ "${ACTION_UPDATE_VL805}" = 1 ]; then
       echo "VL805: update available"
@@ -803,7 +857,7 @@ done
 
 checkDependencies
 if [ "${AUTO_UPDATE_BOOTLOADER}" = 1 ] || [ "${AUTO_UPDATE_VL805}" = 1 ]; then
-   if vcgencmd bootloader_config | grep FREEZE_VERSION=1; then
+   if getBootloaderConfig | grep FREEZE_VERSION=1; then
       echo "EEPROM version is frozen. Skipping update"
       exit ${EXIT_EEPROM_FROZEN}
    else
