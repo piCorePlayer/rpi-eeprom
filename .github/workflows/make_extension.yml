@@ -13,7 +13,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
         with:
-          path: temp/usr/local/bin
+          path: rpi_eeprom_git
+
+      - name: Copy Code
+        run: |
+             mkdir -p sqfs-root/lib/firmware/raspberrypi/bootloader
+             mkdir -p sqfs-root/usr/local/bin
+             mkdir -p sqfs-root/etc/default
+             cp rpi_eeprom_git/rpi-eeprom-config sqfs-root/usr/local/bin/
+             cp rpi_eeprom_git/rpi-eeprom-update sqfs-root/usr/local/bin/
+             cp rpi_eeprom_git/pcp-rpi-eeprom-update sqfs-root/usr/local/bin/
+             cp rpi_eeprom_git/firmware/vl805 sqfs-root/usr/local/bin/
+             cp rpi_eeprom_git/rpi-eeprom-update-default-pcp sqfs-root/etc/default/rpi-eeprom-update
+             cp rpi_eeprom_git/firmware/default sqfs-root/lib/firmware/raspberrypi/bootloader/
+             cp rpi_eeprom_git/firmware/latest sqfs-root/lib/firmware/raspberrypi/bootloader/
+             cp rpi_eeprom_git/firmware/critical sqfs-root/lib/firmware/raspberrypi/bootloader/
+             cp rpi_eeprom_git/firmware/stable sqfs-root/lib/firmware/raspberrypi/bootloader/
+             cp rpi_eeprom_git/firmware/beta sqfs-root/lib/firmware/raspberrypi/bootloader/
+             cp rpi_eeprom_git/release-notes.md sqfs-root/lib/firmware/raspberrypi/bootloader/
 
       - name: Create Release
         id: create_release

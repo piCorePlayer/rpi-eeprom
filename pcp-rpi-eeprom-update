@@ -1,0 +1,23 @@
+#!/bin/sh
+
+# pCP script to update Raspberry Pi4 boot EEPROM.
+
+. /var/www/cgi-bin/pcp-functions
+
+pcp_mount_bootpart_nohtml >/dev/null 2>&1
+
+if [ ! -f ${PACKAGEDIR}/rpi-vc.tcz ]; then
+	echo "rpi-vc extension is required for this tool"
+	exit 1
+elif [ ! -f /usr/local/bin/vcgencmd ]; then
+	sudo -u tc tce-load -i rpi-vc.tcz
+fi
+
+[ -f ${PACKAGEDIR}/python3.6.tcz ] && PYTHON3PKG=python3.6.tcz
+[ -f ${PACKAGEDIR}/python3.8.tcz ] && PYTHON3PKG=python3.8.tcz
+if [ ! -f ${PACKAGEDIR}/$PYTHON3PKG ]; then
+	echo "$PYTHON3PKG extension is required for this tool"
+	exit 1
+elif [ ! -f /usr/local/bin/python3 ]; then
+	sudo -u tc tce-load -i $PYTHON3PKG
+fi
