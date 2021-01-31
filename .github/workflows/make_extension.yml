@@ -1,0 +1,75 @@
+name: Release Extension
+
+on:
+  push:
+    tags:
+    - 'v*'
+
+jobs:
+  build:
+    name: Create Extension
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          path: rpi_eeprom_git
+
+      - name: Copy Code
+        run: |
+             mkdir -p sqfs-root/lib/firmware/raspberrypi/bootloader
+             mkdir -p sqfs-root/usr/local/bin
+             mkdir -p sqfs-root/etc/default
+             cp rpi_eeprom_git/rpi-eeprom-config sqfs-root/usr/local/bin/
+             cp rpi_eeprom_git/rpi-eeprom-update sqfs-root/usr/local/bin/
+             cp rpi_eeprom_git/pcp-rpi-eeprom-update sqfs-root/usr/local/bin/
+             cp rpi_eeprom_git/firmware/vl805 sqfs-root/usr/local/bin/
+             cp rpi_eeprom_git/rpi-eeprom-update-default-pcp sqfs-root/etc/default/rpi-eeprom-update
+             cp -r rpi_eeprom_git/firmware/default sqfs-root/lib/firmware/raspberrypi/bootloader/
+             cp -r rpi_eeprom_git/firmware/latest sqfs-root/lib/firmware/raspberrypi/bootloader/
+             cp -r rpi_eeprom_git/firmware/critical sqfs-root/lib/firmware/raspberrypi/bootloader/
+             cp -r rpi_eeprom_git/firmware/stable sqfs-root/lib/firmware/raspberrypi/bootloader/
+             cp -r rpi_eeprom_git/firmware/beta sqfs-root/lib/firmware/raspberrypi/bootloader/
+             cp rpi_eeprom_git/firmware/release-notes.md sqfs-root/lib/firmware/raspberrypi/bootloader/
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.RPI_EEPROM_RELEASE }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Create Extension
+        id: make_tcz
+        run: |
+            mksquashfs ./sqfs-root rpi-eeprom.tcz
+            md5sum rpi-eeprom.tcz > rpi-eeprom.tcz.md5.txt
+
+      - name: List Extension
+        run: unsquashfs -ll rpi-eeprom.tcz
+
+      - name: Upload Release Asset
+        id: upload-release-asset-tcz
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.RPI_EEPROM_RELEASE }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./rpi-eeprom.tcz
+          asset_name: rpi-eeprom.tcz
+          asset_content_type: application/data
+
+      - name: Upload Release Asset
+        id: upload-release-asset-md5
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.RPI_EEPROM_RELEASE }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./rpi-eeprom.tcz.md5.txt
+          asset_name: rpi-eeprom.tcz.md5.txt
+          asset_content_type: application/data
