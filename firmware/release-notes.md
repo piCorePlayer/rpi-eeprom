@@ -3,7 +3,30 @@
 USB MSD boot also requires the firmware from Raspberry Pi OS 2020-08-20 or newer.
 https://www.raspberrypi.org/documentation/hardware/raspberrypi/bcm2711_bootloader_config.md
 
-## 2021-01-16 - Fix 1V8 SD voltage reset for Pi 4B R1.1 LATEST + BETA
+## 2021-03-04 - NVMe boot support - BETA
+   * Adds support for NVMe to the bootloader with a new NVMe boot mode "6"
+     NVMe currently only works for controller 0 on namespace 1 with a page size of 4096 bytes
+     and block size of 512 bytes
+   * The default boot order has been updated to F641 for cm4 ONLY, so NVMe boot is
+     attempted after SD and USB
+
+     To use the new NVMe add "6" to the BOOT_ORDER.
+
+     This requires the latest rpi-update firmware to work or else you will see a compatibility
+     error on boot. You also need the latest kernel from rpi-update to load rootfs from NVMe
+     see https://github.com/Hexxeh/rpi-firmware/commit/48570ba954a318feee348d4e642ebd2b58d9dd97
+     and https://github.com/Hexxeh/rpi-firmware/commit/e150906874ff8b9fb6271971fa4238997369f790
+
+## 2021-02-22 - Promote 2021-02-16 to stable - STABLE (LATEST)
+   * Freezing for default/critical update.
+
+## 2021-02-16 - Change VC version info & TFTP fix - BETA
+   * Display the VC_BUILD strings instead of the sha256 of the .elf file so that
+     the information is the same as "vcgencmd version"
+   * Change TFTP to ACK data blocks which it has already ACK'd instead of ignoring them.
+   * Change network boot to use the same "RXID" configuration as the 5.10 kernel.
+
+## 2021-01-16 - Fix 1V8 SD voltage reset for Pi 4B R1.1 - LATEST + BETA
    * Fix regression for GPIO expander reset change which caused PMIC reset
      to get card out of 1V8 mode to be missed.
 
