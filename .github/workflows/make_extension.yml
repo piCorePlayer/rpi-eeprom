@@ -23,7 +23,6 @@ jobs:
              cp rpi_eeprom_git/rpi-eeprom-config sqfs-root/usr/local/bin/
              cp rpi_eeprom_git/rpi-eeprom-update sqfs-root/usr/local/bin/
              cp rpi_eeprom_git/pcp-rpi-eeprom-update sqfs-root/usr/local/bin/
-             cp rpi_eeprom_git/firmware/vl805 sqfs-root/usr/local/bin/
              cp rpi_eeprom_git/rpi-eeprom-update-default-pcp sqfs-root/etc/default/rpi-eeprom-update
              cp -r rpi_eeprom_git/firmware/default sqfs-root/lib/firmware/raspberrypi/bootloader/
              cp -r rpi_eeprom_git/firmware/latest sqfs-root/lib/firmware/raspberrypi/bootloader/
