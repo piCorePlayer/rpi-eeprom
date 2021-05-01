@@ -23,7 +23,7 @@ trap cleanup EXIT
 check_reduce_size()
 {
    # Verify that unused bytes are set to 0xff if the size of the config file is reduced.
-   echo "check_update $1 $2"
+   echo "check_reduce_size $1 $2"
 
    image="${script_dir}/$1"
    conf="${script_dir}/$2"
@@ -61,7 +61,7 @@ check_reduce_size()
 
 check_loopback()
 {
-   echo "check_update $1 $2"
+   echo "check_loopback $1 $2"
 
    image="${script_dir}/$1"
    conf="${script_dir}/$2"
@@ -141,8 +141,12 @@ check_conf_size_too_large()
    fi
 }
 
-check_loopback "../firmware/old/beta/pieeprom-2019-07-15.bin" "bootconf-2019-07-15.txt"
-cleanup
+echo "Check config read and loopback read/write against reference config files"
+versions="$(cd configs; ls *.txt | sed 's/bootconf-//g' | sed 's/.txt//g')"
+for ver in ${versions}; do
+   check_loopback "../firmware/old/beta/pieeprom-${ver}.bin" "configs/bootconf-${ver}.txt"
+   cleanup
+done
 
 check_update "../firmware/old/beta/pieeprom-2019-07-15.bin" "pieeprom-2019-07-15-freeze.bin" "bootconf-2019-07-15-freeze.txt"
 cleanup
