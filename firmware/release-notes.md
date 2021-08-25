@@ -3,6 +3,39 @@
 USB MSD boot also requires the firmware from Raspberry Pi OS 2020-08-20 or newer.
 https://www.raspberrypi.org/documentation/hardware/raspberrypi/bcm2711_bootloader_config.md
 
+## 2021-07-07 - Promote pieeprom-2021-07-06 to stable - STABLE
+  * Promote the latest beta to stable. For CM4 users this adds NVMe
+    boot support to the stable release.
+
+## 2021-07-06 - Tidyup PXE debug strings - BETA
+   * Remove redundant debug string - hexdump is more useful for debug.
+   * Minor internal changes for manufacturing test.
+
+## 2021-06-25 - Support 256MB gpu_mem with boot ramdisk - BETA
+   * Tweak the address map so that boot ramdisks (e.g. rpiboot -d imager)
+     work with large amounts of GPU memory.
+
+## 2021-06-17 - Avoid unnecessary PCIe probe on CM4 - BETA
+   * Avoid default PCIe / XHCI probe on CM4 unless required for the current boot
+     mode (USB_MSD or NVME).
+   * Leave PCIe RC in reset state when loading start.elf except for USB-MSD mode.
+
+## 2021-06-11 - Add USB_MSD_STARTUP_DELAY option - BETA
+   * Minor update to BRCM SDRAM settings.
+   * Add USB_MSD_STARTUP_DELAY option (default 0 option). This adds a configurable
+     delay (in milliseconds) the first time the USB host controller is initialised
+     before device enumeration.
+     Normally, this should not be required. However, some HDD enclosures may
+     require an extended startup delay in order to spinup drives. Without this
+     the get-capacity command may stall and timeout.
+
+## 2021-05-19 - Use the latest BRCM SDRAM settings - BETA
+   * Use the latest BRCM SDRAM settings.
+   * FAT12 support for small bootloader ramdisk images.
+   * Minor file-system performance optimisations.
+   * Added recovery.bin config.txt option (erase_eeprom=1) to perform an
+     SPI chip-erase operation instead of programming the bootloader image.
+
 ## 2021-04-30 - Update default version to 2021-04-29
    * The manufacturing release has been updated to pieeprom-2021-04-29 so update the default release to match this.
 
@@ -18,7 +51,7 @@ https://www.raspberrypi.org/documentation/hardware/raspberrypi/bcm2711_bootloade
    * UDP checksum fixes
    * Add support for the BCM2711 XHCI controller - BOOT_ORDER 0x5
    * XHCI protocol layer fixes for non-VLI controllers
-   * Avoid USB MSD timeout of there is only one device
+   * Avoid USB MSD timeout if there is only one device
    * Implement tryboot for OS upgrade fallback
    * Check the update-timestamp before applying an update in SELF-UPDATE mode
 
