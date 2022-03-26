@@ -1,7 +1,154 @@
 # Raspberry Pi4 bootloader EEPROM release notes
 
-USB MSD boot also requires the firmware from Raspberry Pi OS 2020-08-20 or newer.
-https://www.raspberrypi.org/documentation/hardware/raspberrypi/bcm2711_bootloader_config.md
+## 2022-03-10 - Promote the 2022-03-10 beta release to LATEST/STABLE
+   * Includes new net install feature, enabled by default for Pi 4 and Pi 400
+   * New net install download screen may appear on boot if a boot location can't
+     be found or if boot is slow. Alternative press and hold shift on boot to
+     start net install.
+   * New HTTP boot order.
+   * Bootloader diagnosis screen is now 720p if supported by your monitor.
+   * Self update mode is now enabled during SD/EMMC boot.
+   * The PARTITION number can now be specified as an EEPROM property.
+   * Allow smaller MSD discovery timeouts to be specified.
+   * Some tweaks and fixes to IPV6 netboot.
+   * Increase the max ramdisk size to 128MB
+   * Increase timeout of early SD/EMMC commands to 100ms
+
+## 2022-03-10 - HTTP_PATH fix - BETA
+   * Fix the defective HTTP_PATH eeprom configuration
+
+## 2022-02-28 - More net Install changes - BETA
+   Net install changes.
+   * Net install is initiated on boot if shift is pressed.
+   * New HTTP boot order (7) and configuration parameters,
+     HTTP_HOST, HTTP_PATH, HTTP_PORT to set url
+
+   Other interesting changes.
+   * Increase the max ramdisk size to 128MB
+   * Increase timeout of early SD/EMMC commands to 100ms
+
+## 2022-02-16 - Net Install fixes - BETA
+   Net install changes.
+   * Got rid of confirmation step that required you to press <Space> to
+     initiate net install. Now just long press <Shift>
+   * Updated the screen text to make it more obvious the device is still
+     trying boot when the net install is showing.
+   * Fixed a DHCP net install bug which caused us to lose the
+     gateway address.
+   * Fixed a bug with the uIP timers which could cause net install to
+     always fail.
+   * Implemented resume and retry on download failure.
+
+   Other interesting changes.
+   * Allow smaller MSD discovery timeouts to be specified.
+   * Some tweaks and fixes to IPV6 netboot.
+
+## 2022-02-08 - Fix secure-boot boot failure - STABLE
+   * Fix boot failure regression on boards which had the OTP secure boot bits set.
+
+## 2022-02-04 - Network Install - BETA
+   * New network install feature for the bootloader. To disable network install
+     (e.g. in an industrial product) set NET_INSTALL_ENABLED=0 in the EEPROM
+     config or HDMI_DISABLE=1.
+   * Self update mode is now enabled during SD/EMMC boot. This enables
+     rpi-eeprom-update to be used on a CM4 / CM4-lite because recovery.bin
+     is not required. For industrial products we recommend disabling
+     self-update after initial setup by setting ENABLE_SELF_UPDATE=0 in
+     the EEPROM config.
+   * The PARTITION number can now be specified as an EEPROM property. This
+     might be used to boot maintenance software if a button connected to
+     a GPIO is pressed. The partition number specified via the reboot
+     command or autoboot.txt are a higher precedence than the EEPROM
+     property.
+
+## 2022-01-25 - Promote pieeprom-2022-01-25 to the DEFAULT release
+Interesting changes since the last default release
+   * Support and bug fixes for all Compute Module variants.
+   * NVMe interoperability fixes
+   * FAT/GPT fixes and file-system performance improvements.
+   * Add secure-boot support for industrial applications
+     See https://github.com/raspberrypi/usbboot/blob/master/secure-boot-recovery/README.md
+   * Added ramdisk / boot.img - for RPIBOOT and secure-boot.
+
+## 2022-01-25 - Create new release from 2022-01-20 - LATEST/STABLE
+   * Rebuild 2022-01-20 for new stable release
+
+## 2022-01-20 - Some NVMe boot fixes - BETA
+   * PCIe retry on error
+   * NVMe logging changes
+   * NVMe attempts to boot twice
+   * Increase the maximum GPU memory size from 256MB to 512MB so long as
+     boot_ramdisk=0. This should only be used with the legacy camera
+     application and FKMS for very memory intensive camera operations.
+     N.B. The new libcamera and KMS driver use CMA instead of GPU memory.
+
+## 2021-12-02 - Promote the 2021-12-02 beta release to LATEST/STABLE
+   * Just fixes a regression with MTB detection affecting factory testing
+
+## 2021-12-02 - Fix MTB detection for factory test - BETA
+   * Just fixes a regression with MTB detection affecting factory testing
+
+## 2021-12-09 - Update default recovery.bin
+   * Promote the recovery.bin from stable to default. This avoids an issue
+     where recovery.bin fails to load on large FAT32 boot partions with 32K
+     clusters.
+
+## 2021-11-29 - Promote the 2021-11-22 beta release to LATEST/STABLE
+Interesting changes since the last stable release:-
+   * NVMe / PCIe reset fixes
+   * GPT / FAT enhancements
+   * FAT performance improvements
+   * Secure-boot for industrial customers (see usbboot repo)
+
+## 2021-11-22 - Fix for Sabrent rocket Nano NVMe reboot issue - BETA
+  * Fixes issue with Sabrent rocket Nano NVMe disk after a reboot.
+    Run pcie initialisation again if there's an error.
+
+## 2021-10-27 - Secure boot improvements - BETA
+  * Improve the error logging if a file is too large and truncated.
+  * Increase the maximum size of the ramdisk to 96MB.
+  * Preliminary changes to expose the boot-mode used to load the ramdisk via device-tree.
+
+  N.B. Secure boot is only recommended for industrial customers and is currently
+  a beta release. This can only be enabled via RPIBOOT
+  https://github.com/raspberrypi/usbboot/blob/master/Readme.md
+
+## 2021-10-05 - Update for latest Broadcom SDRAM settings - BETA
+  * Minor update for latest SDRAM tuning settings.
+
+## 2021-10-04 - Add support for GPT FAT16 and increase USB timeouts - BETA
+  * Update the FAT detection to support FAT16 for EFI/ESD paritions with
+    GPT instead of assuming FAT32. The latest firmware is also required
+    for a similar update.
+  * Increase the timeouts for MSD SCSI commands to reduce the risk of
+    timeouts when probing the capacity of slow to start devices
+    e.g. USB RAID with spinning disks.
+
+## 2021-09-27 - Fix recovery.bin rename issue and EEPROM netconsole - BETA
+  * Fix recovery.bin rename issue
+  * Update pieeprom-2021-09-27.bin to fix netconsole
+
+## 2021-09-23 - Temporarily revert recovery.bin 2021-09-22 BETA/STABLE
+  * Revert until fix for can be verified https://github.com/raspberrypi/rpi-eeprom/issues/367
+
+## 2021-09-23 - Bootloader file-system updates - BETA
+This release makes major changes to the bootloader file-system code in order
+to support new features and should be treated as a bleeding edge BETA release!
+  * Improve file-system performance to reduce boot time.
+  * Preliminary support for IPV6 TFTP. Requires an updated start4.elf.
+    Details to follow.
+  * Fix VL805=1 option for CM4 IO boards that follow the same XHCI
+    design as Pi4B. Start.elf will be updated in the next rpi-update release
+    and the latest CM4 DTBs are required for the 'XHCI reset controller'
+  * Preliminary support for loading signed boot image files.
+    Requires updated GPU firmware.
+
+## 2021-09-22 - Update recovery.bin to fix issue with large FAT partitions - STABLE
+  * Bump the latest recovery.bin under beta to stable.
+
+## 2021-09-22 - Update recovery.bin to fix issue with large FAT partitions - BETA
+  * Fix an issue where the ROM fails to load larger recovery.bin files
+    on FAT partitions with large cluster sizes.
 
 ## 2021-07-07 - Promote pieeprom-2021-07-06 to stable - STABLE
   * Promote the latest beta to stable. For CM4 users this adds NVMe
