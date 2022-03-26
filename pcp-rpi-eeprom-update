@@ -2,7 +2,7 @@
 
 # pCP script to update Raspberry Pi4 boot EEPROM.
 
-VERSION="v1.0"
+VERSION="v3.0"
 
 . /etc/init.d/tc-functions
 . /var/www/cgi-bin/pcp-functions
@@ -80,6 +80,13 @@ if [ ! -f ${PACKAGEDIR}/rpi-vc.tcz ]; then
 	exit 1
 elif [ ! -f /usr/local/bin/vcgencmd ]; then
 	tce-load -i rpi-vc.tcz
+fi
+
+if [ ! -f ${PACKAGEDIR}/pciutils.tcz ]; then
+	echo "pciutils extension is required for this tool"
+	exit 1
+elif [ ! -f /usr/local/bin/lspci ]; then
+	tce-load -i pciutils.tcz
 fi
 
 [ -f ${PACKAGEDIR}/python3.6.tcz ] && PYTHON3PKG=python3.6.tcz

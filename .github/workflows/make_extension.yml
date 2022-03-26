@@ -21,6 +21,7 @@ jobs:
              mkdir -p sqfs-root/usr/local/bin
              mkdir -p sqfs-root/etc/default
              cp rpi_eeprom_git/rpi-eeprom-config sqfs-root/usr/local/bin/
+             cp rpi_eeprom_git/rpi-eeprom-digest sqfs-root/usr/local/bin/
              cp rpi_eeprom_git/rpi-eeprom-update sqfs-root/usr/local/bin/
              cp rpi_eeprom_git/pcp-rpi-eeprom-update sqfs-root/usr/local/bin/
              cp rpi_eeprom_git/rpi-eeprom-update-default-pcp sqfs-root/etc/default/rpi-eeprom-update
