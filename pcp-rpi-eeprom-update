@@ -75,11 +75,15 @@ done
 
 pcp_mount_bootpart_nohtml >/dev/null 2>&1
 
-if [ ! -f ${PACKAGEDIR}/rpi-vc.tcz ]; then
-	echo "rpi-vc extension is required for this tool"
+if [ -f ${PACKAGEDIR}/rpi-utils.tcz -o -f ${PACKAGEDIR}/rpi-vc.tcz ]; then
+	echo "rpi-utils extension is required for this tool"
 	exit 1
 elif [ ! -f /usr/local/bin/vcgencmd ]; then
-	tce-load -i rpi-vc.tcz
+	if [ -f ${PACKAGEDIR}/rpi-utils.tcz ]; then
+		tce-load -i rpi-utils.tcz
+	elif [ -f ${PACKAGEDIR}/rpi-vc.tcz ]; then
+		tce-load -i rpi-vc.tcz
+	fi
 fi
 
 if [ ! -f ${PACKAGEDIR}/pciutils.tcz ]; then
@@ -91,13 +95,13 @@ fi
 
 [ -f ${PACKAGEDIR}/python3.6.tcz ] && PYTHON3PKG=python3.6.tcz
 [ -f ${PACKAGEDIR}/python3.8.tcz ] && PYTHON3PKG=python3.8.tcz
+[ -f ${PACKAGEDIR}/python3.11.tcz ] && PYTHON3PKG=python3.11.tcz
 if [ ! -f ${PACKAGEDIR}/$PYTHON3PKG ]; then
 	echo "python 3 extension is required for this tool"
 	exit 1
 elif [ ! -f /usr/local/bin/python3 ]; then
 	tce-load -i $PYTHON3PKG
 fi
-
 
 [ ! -x /usr/local/bin/python ] && sudo ln -s /usr/local/bin/python3 /usr/local/bin/python
 

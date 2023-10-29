@@ -17,7 +17,8 @@ jobs:
 
       - name: Copy Code
         run: |
-             mkdir -p sqfs-root/lib/firmware/raspberrypi/bootloader
+             mkdir -p sqfs-root/lib/firmware/raspberrypi/bootloader-2711
+             mkdir -p sqfs-root/lib/firmware/raspberrypi/bootloader-2712
              mkdir -p sqfs-root/usr/local/bin
              mkdir -p sqfs-root/etc/default
              cp rpi_eeprom_git/rpi-eeprom-config sqfs-root/usr/local/bin/
@@ -25,12 +26,20 @@ jobs:
              cp rpi_eeprom_git/rpi-eeprom-update sqfs-root/usr/local/bin/
              cp rpi_eeprom_git/pcp-rpi-eeprom-update sqfs-root/usr/local/bin/
              cp rpi_eeprom_git/rpi-eeprom-update-default-pcp sqfs-root/etc/default/rpi-eeprom-update
-             cp -r rpi_eeprom_git/firmware/default sqfs-root/lib/firmware/raspberrypi/bootloader/
-             cp -r rpi_eeprom_git/firmware/latest sqfs-root/lib/firmware/raspberrypi/bootloader/
-             cp -r rpi_eeprom_git/firmware/critical sqfs-root/lib/firmware/raspberrypi/bootloader/
-             cp -r rpi_eeprom_git/firmware/stable sqfs-root/lib/firmware/raspberrypi/bootloader/
-             cp -r rpi_eeprom_git/firmware/beta sqfs-root/lib/firmware/raspberrypi/bootloader/
-             cp rpi_eeprom_git/firmware/release-notes.md sqfs-root/lib/firmware/raspberrypi/bootloader/
+
+             cp -r rpi_eeprom_git/firmware-2711/default sqfs-root/lib/firmware/raspberrypi/bootloader-2711/
+             cp -r rpi_eeprom_git/firmware-2711/latest sqfs-root/lib/firmware/raspberrypi/bootloader-2711/
+             cp -r rpi_eeprom_git/firmware-2711/critical sqfs-root/lib/firmware/raspberrypi/bootloader-2711/
+             cp -r rpi_eeprom_git/firmware-2711/stable sqfs-root/lib/firmware/raspberrypi/bootloader-2711/
+             cp -r rpi_eeprom_git/firmware-2711/beta sqfs-root/lib/firmware/raspberrypi/bootloader-2711/
+             cp rpi_eeprom_git/firmware-2711/release-notes.md sqfs-root/lib/firmware/raspberrypi/bootloader-2711/
+
+             cp -r rpi_eeprom_git/firmware-2712/default sqfs-root/lib/firmware/raspberrypi/bootloader-2712/
+             cp -r rpi_eeprom_git/firmware-2712/latest sqfs-root/lib/firmware/raspberrypi/bootloader-2712/
+             cp -r rpi_eeprom_git/firmware-2712/critical sqfs-root/lib/firmware/raspberrypi/bootloader-2712/
+             cp -r rpi_eeprom_git/firmware-2712/stable sqfs-root/lib/firmware/raspberrypi/bootloader-2712/
+             cp -r rpi_eeprom_git/firmware-2712/beta sqfs-root/lib/firmware/raspberrypi/bootloader-2712/
+             cp rpi_eeprom_git/firmware-2712/release-notes.md sqfs-root/lib/firmware/raspberrypi/bootloader-2712/
 
       - name: Create Release
         id: create_release
