@@ -41,9 +41,9 @@ jobs:
              cp -r rpi_eeprom_git/firmware-2712/beta sqfs-root/lib/firmware/raspberrypi/bootloader-2712/
              cp rpi_eeprom_git/firmware-2712/release-notes.md sqfs-root/lib/firmware/raspberrypi/bootloader-2712/
 
-      - name: Create Release
+      - name: Create a Release in a GitHub Action
         id: create_release
-        uses: actions/create-release@v1
+        uses: comnoco/create-release-action@v2.0.5
         env:
           GITHUB_TOKEN: ${{ secrets.RPI_EEPROM_RELEASE }}
         with:
