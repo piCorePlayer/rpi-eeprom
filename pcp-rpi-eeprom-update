@@ -2,7 +2,7 @@
 
 # pCP script to update Raspberry Pi4 boot EEPROM.
 
-VERSION="v3.0"
+VERSION="v20.0"
 
 . /etc/init.d/tc-functions
 . /var/www/cgi-bin/pcp-functions
@@ -75,12 +75,12 @@ done
 
 pcp_mount_bootpart_nohtml >/dev/null 2>&1
 
-if [ -f ${PACKAGEDIR}/rpi-utils.tcz -o -f ${PACKAGEDIR}/rpi-vc.tcz ]; then
-	echo "rpi-utils extension is required for this tool"
+if [ ! -f ${PACKAGEDIR}/raspi-utils.tcz -o ! -f ${PACKAGEDIR}/rpi-vc.tcz ]; then
+	echo "raspi-utils extension is required for this tool"
 	exit 1
 elif [ ! -f /usr/local/bin/vcgencmd ]; then
-	if [ -f ${PACKAGEDIR}/rpi-utils.tcz ]; then
-		tce-load -i rpi-utils.tcz
+	if [ -f ${PACKAGEDIR}/raspi-utils.tcz ]; then
+		tce-load -i raspi-utils.tcz
 	elif [ -f ${PACKAGEDIR}/rpi-vc.tcz ]; then
 		tce-load -i rpi-vc.tcz
 	fi
