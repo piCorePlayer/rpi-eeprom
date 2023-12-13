@@ -1,5 +1,25 @@
 # Raspberry Pi5 bootloader EEPROM release notes
 
+2023-12-06: Initialise DWC PHY (latest)
+
+* Initialise the DWC PHY to enable DWC host+peripheral support under Linux.
+  Requires https://github.com/raspberrypi/linux/commit/82069a7a02632aa60fa5c69415bf891ede7d6fd4
+* Force PWM on 3V3 supply if cameras or HATs are connected or if power_force_3v3_pwm=1 in config.txt
+  Resolves an image quality issue with the GS camera.
+* Add support for C(arm_min_freq) < 1500 MHz (must be at >= 200 MHz)
+* Manufacturing test updates for DVFS.
+
+2023-11-20: Auto-detect support for PCIe expansion HAT (default + latest)
+
+* Add autodetect support for PCIe expansion HATs
+* Add PCIE_PROBE=1 to the EEPROM config for custom PCIe exapansion
+  designs that do not support the upcoming HAT spec. This gives
+  similar behaviour to CM4 where PCIe x1 is enumerated to discover NVMe
+  devices.
+* Fix loading of multiple initramfs images that are not 32-bit aligned sizes
+  https://github.com/raspberrypi/firmware/issues/1843
+* Kernel load performance improvement - remove a memcpy
+
 2023-10-30: UPG watchdog support + SD reset fixes (default + latest)
 
 * Fix SDIO / WiFi clock-setup for BOOT_ORDER=0xf14
