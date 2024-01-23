@@ -1,5 +1,35 @@
 # Raspberry Pi5 bootloader EEPROM release notes
 
+2024-01-22: Add support for network-install (latest)
+* Fix issue boot.img end sector check - STABLE
+  See:  https://github.com/raspberrypi/rpi-eeprom/issues/521
+* Fix handling of files that use the last cluster in the partition
+  See: https://github.com/raspberrypi/rpi-eeprom/issues/521
+* Fix SD card detection
+  See: https://github.com/raspberrypi/rpi-eeprom/issues/523
+
+2024-01-15: Add support for network-install (latest)
+* Add support for Network Install
+* Preliminary D0 firmware support
+
+2024-01-08: Promote 2024-01-05 to default (automatic update)
+
+2024-01-05: Fix handling of FAT files without LFNs.
+* Fix issues with SFN entries sometimes being treated as LFNs
+  see https://github.com/raspberrypi/rpi-eeprom/issues/514
+* Add a dedicated message for "M.2 HAT" not being found instead of
+  the generic 'unsupported boot order' message when NVMe boot is
+  skipped.
+
+2023-12-17: Promote 2023-12-14 to default release
+* Bump to the default release now that the partition number fix is confirmed.
+
+2023-12-14: Fix boot partition parameter (latest)
+* Fix an issue where the boot partition parameter in PM_RSTS was cleared
+  before being checked.
+  https://github.com/raspberrypi/firmware/issues/1853
+* Add a specific fatal error pattern for RP1 not found - 4 long - 3 short
+
 2023-12-12: Promote 2023-12-06 to default release.
 
 2023-12-06: Initialise DWC PHY (latest)
