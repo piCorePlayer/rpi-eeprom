@@ -1,5 +1,50 @@
 # Raspberry Pi5 bootloader EEPROM release notes
 
+2024-04-05: HAT+ fixes for max-current, custom CA cert for net install and enable over-clocking to > 3GHz (latest)
+* bootloader: clock_2712: Remove restriction on arm_freq <= 3000
+  See: https://github.com/raspberrypi/firmware/issues/1876
+* arm_dt: Update max_current to match HAT value
+* arm_dt: Remove unused legacy parameters (core_freq, arm_freq, uart0_clkrate and cache_line_size)
+* Add support for custom CA cert for network install
+    You need to specify
+    HTTP_HOST=myhost.com
+    HTTP_PATH=/path/to/files
+    HTTP_CACERT_HASH=<hash>
+
+    where <hash> is a sha256 hash of the der encoded ca certificate.
+    CA cert is added using rpi-eeprom-config.
+* Optimise Vbat current draw with charging disabled
+* Display OTP boot status in UART log messages.
+* Preliminary support for secure-boot OTP provisioning.
+* Update PCIE DET_WAKE pinmux for D0 products
+
+2024-02-16: u-boot loading and thermal throttling fixes (latest) (default)
+* arm_loader: Move non-kernels back to 512KB
+  See: https://github.com/raspberrypi/firmware/issues/1868
+
+* Limit throttled frequency to OS requested frequency rather than
+  config.txt frequency.
+  See: https://github.com/raspberrypi/rpi-eeprom/issues/518
+
+2024-02-14: Fix vcgencmd otp_dump and implement C(initial_turbo) (latest)
+* Fix a regression that caused vcgencmd otp_dump to fail.
+* Implement C(initial_turbo) on Pi5
+  See: https://github.com/raspberrypi/firmware/issues/1864
+
+2024-02-08: Adjust SDRAM refresh based on temperature (latest)
+
+* Adjust the SDRAM refresh interval based on the temperature. This
+  addresses the gap in performance between the 8GB and 4GB variants.
+  See https://github.com/raspberrypi/firmware/issues/1854
+* Preliminary support for signed boot.
+
+2024-02-05: Add support for HAT+ POE HATs (latest)
+* Add support for probing HAT+ POE HATs
+* Implement DWC3 specific XHCI quirks
+
+2024-01-24: NVMe boot fix for WD NVMe (latest)
+* Add a workaround for an issue seen when booting with WD Blue SN550 NVMe SSD
+
 2024-01-22: Add support for network-install (latest)
 * Fix issue boot.img end sector check - STABLE
   See:  https://github.com/raspberrypi/rpi-eeprom/issues/521
@@ -70,7 +115,7 @@
 * Update board-name - "Raspberry Pi 5"
 
 2023-09-28: vcgencmd pmic_read_adcs fixes (automatic update)
- 
+
 * Fix the LDO names and current scaling codes
 * Manufacturing test updates
 
