@@ -1,5 +1,31 @@
 # Raspberry Pi4 bootloader EEPROM release notes
 
+## 2024-09-05: Fix self-update if EEPROM is write-protected (latest)
+* arm_dt: Consult the hat_map for all HATs
+* USB boot - ignore RP2 / RP3 MSD device in BOOTSEL mode.
+* recovery.bin - Fix erase_eeprom to not block reboot_recovery
+* Fix self-update to continue to boot instead of retrying forever
+  if the EEPROM is write protected.
+  https://github.com/raspberrypi/rpi-eeprom/issues/597
+
+## 2024-08-14 (recovery.bin) -  Add support for OTP metadata (latest)
+* Update to recovery.bin to output metadata about OTP during rpiboot
+
+## 2024-07-30 - USB boot fixes for CM4-S and interop improvments (latest)
+  * Resolve USB boot regression in 2024-04-17 relase on CM4S
+    See https://github.com/raspberrypi/rpi-eeprom/issues/588
+  * Improve compatibility for booting from some USB SD card readers
+    https://github.com/raspberrypi/rpi-eeprom/issues/527
+
+## 2024-07-05 (recovery.bin) - Enable program_rpioboot_gpio - (latest)
+  * Enable the usage of program_rpiboot_gpio in config.txt for recovery.bin
+    without requiring secure-boot to be enabled.
+    This may be useful CI systems provisioning images on Pi4B / Pi400
+    via RPIBOOT.
+    This is an OTP setting and cannot be reverted after programming.
+
+    See https://www.raspberrypi.com/documentation/computers/config_txt.html#program_rpiboot_gpio
+
 ## 2024-05-17 - Ignore bootloader updates for Pi5 on Pi4 - (latest)
   * Add timestamps to UART log messages.
   * Add support for [tryboot] conditional the bootloader EEPROM
