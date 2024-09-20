@@ -2,7 +2,7 @@
 
 # pCP script to update Raspberry Pi4/5 boot EEPROM.
 
-VERSION="v2024.09.10-2712-1-pcp"
+VERSION="v2024.09.10-2712-2-pcp"
 
 . /etc/init.d/tc-functions
 . /var/www/cgi-bin/pcp-functions
@@ -73,7 +73,7 @@ for A in $@; do
 	esac
 done
 
-pcp_mount_bootpart_nohtml >/dev/null 2>&1
+pcp_mount_bootpart text >/dev/null 2>&1
 
 if [ ! -f ${PACKAGEDIR}/raspi-utils.tcz -a ! -f ${PACKAGEDIR}/rpi-vc.tcz ]; then
 	echo "raspi-utils extension is required for this tool"
