@@ -1,8 +1,8 @@
 #!/bin/sh
 
-# pCP script to update Raspberry Pi4 boot EEPROM.
+# pCP script to update Raspberry Pi4/5 boot EEPROM.
 
-VERSION="v20.0"
+VERSION="v2024.09.10-2712-1-pcp"
 
 . /etc/init.d/tc-functions
 . /var/www/cgi-bin/pcp-functions
@@ -75,7 +75,7 @@ done
 
 pcp_mount_bootpart_nohtml >/dev/null 2>&1
 
-if [ ! -f ${PACKAGEDIR}/raspi-utils.tcz -o ! -f ${PACKAGEDIR}/rpi-vc.tcz ]; then
+if [ ! -f ${PACKAGEDIR}/raspi-utils.tcz -a ! -f ${PACKAGEDIR}/rpi-vc.tcz ]; then
 	echo "raspi-utils extension is required for this tool"
 	exit 1
 elif [ ! -f /usr/local/bin/vcgencmd ]; then
@@ -96,6 +96,7 @@ fi
 [ -f ${PACKAGEDIR}/python3.6.tcz ] && PYTHON3PKG=python3.6.tcz
 [ -f ${PACKAGEDIR}/python3.8.tcz ] && PYTHON3PKG=python3.8.tcz
 [ -f ${PACKAGEDIR}/python3.11.tcz ] && PYTHON3PKG=python3.11.tcz
+[ -f ${PACKAGEDIR}/python3.12.tcz ] && PYTHON3PKG=python3.12.tcz
 if [ ! -f ${PACKAGEDIR}/$PYTHON3PKG ]; then
 	echo "python 3 extension is required for this tool"
 	exit 1
