@@ -1,5 +1,44 @@
 # Raspberry Pi5 bootloader EEPROM release notes
 
+## 2024-11-27: rp1fw: Add FIFO_STATE & DRAIN_TX, fix CAN_ADD_PROGRAM (default)
+
+* rp1fw: Add FIFO_STATE & DRAIN_TX, fix CAN_ADD_PROGRAM
+  RP1 firmware eb39cfd516f8c90628aa9d91f52370aade5d0a55 adds methods
+  to drain the TX FIFO and retrieve the state of both FIFOs. It also
+  fixes the CAN_ADD_PROGRAM implementation, which was fatally broken.
+* network-install - Update the UI to display the board model / variant.
+
+## 2024-11-12: Promote 2024-11-12 to default release (default)
+
+* Promote 2024-11 to the default release and archive older versions.
+
+## 2024-11-12: Enable initial_turbo=60 by default (latest)
+
+* net-install: Fix keyboard detection on hubs
+* recovery: Always enable UART debug output on 2712
+* Set POWER_OFF_ON_HALT defaults
+  The default value for POWER_OFF_ON_HALT on CM5 and Pi 500 will be 1.
+  Pi5 defaults to 0 for backwards compatibility.
+* boot-time: Remove unnecessary 1 second delay when configuring DWC2 controller.
+* Enable initial_turbo=60 by default
+  This reduces the time to get load and decompress the kernel.
+* logging: Remove superfluous newline on SDRAM refresh changed messages
+* Fix initial_turbo duration
+  The timeout counter for the previous implementation could run too quickly
+  causing the initial-turbo timeout to end earlier than expected.
+* rp1-fw: Add the mailbox firmware interface, and PIO support that uses it.
+* rp1-fw: Turn off unused 25MHz Ethernet refclk
+
+## 2024-11-07: recovery.bin - Update default release to latest version (default)
+
+* Update recovery.bin to the most recent version required for CM5 and Pi500.
+  (firmware version 2024-10-21)
+
+## 2024-11-05: NUMA - Add system_heap.max_order=0 when needed (latest)
+
+* NUMA - Add system_heap.max_order=0 when needed - configure this
+  setting automatically depending on whether NUMA is enabled.
+
 ## 2024-10-21: Fix PCIe BAR issue for some switches  (latest)
 
 * Fix PCIe BAR setup issue which prevented NVMe boot from working with some PCIe switches
