@@ -54,7 +54,7 @@ usage() {
 	echo ""
 	echo "The default firmware upgrade is from the critical firmware branch"
 	echo "  to override, set the FIRMWARE_RELEASE_STATUS environmen variable"
-	echo "  export FIRMWARE_RELEASE_STATUS=<critical|stable|beta>"
+	echo "  export FIRMWARE_RELEASE_STATUS=<default|latest>"
    echo ""
 	echo "----------------------------------------------"
 	echo ""
