@@ -1,5 +1,197 @@
 # Raspberry Pi5 bootloader EEPROM release notes
 
+## 2025-02-17: Promote 2025-02-12 to the default release (default)
+
+## 2025-02-12: Fixup change to disable 3.7V PMIC output on CM5 no-wifi (latest)
+
+* Fixup change to disable 3.7V PMIC output on CM5 no-wifi
+
+## 2025-02-11: CM5 no-Wifi stability improvements (latest)
+
+* recovery: Walk partitions to delete recovery.bin
+  Previously, recovery.bin would fail to delete itself
+  if the bootrom loaded recovery.bin where there are multiple FAT
+  partitions and the first partition does not contain recovery.bin
+  Update the rename code to walk the partition table to find
+  the recovery.bin file to delete.
+* pi5: Add config filter for simple boot variable expressions (experimental)
+  Add support for a new bootloader/config.txt conditional filter
+  which tests the partition, boot_count and boot_arg1 variables.
+  Syntax (no spaces):
+  ARG boot_arg1, boot_count or partition (EEPROM config stage only)
+  [ARG=VALUE]      selected if (ARG == VALUE)
+  [ARG&MASK]       selected if ((ARG & VALUE) != 0))
+  [ARG&MASK=VALUE] selected if ((ARG & MASK) == VALUE)
+  [ARG<VALUE]      selected if (ARG < VALUE)
+  [ARG>VALUE]      selected if (ARG > VALUE)
+  where VALUE and MASK are unsigned integer constants and ARG
+  corresponds to the value in the reset register before the
+  config file is parsed.
+* pi5: Add a boot-count bootloader variable (experimental)
+  Store the boot-count in a reset register and increment just
+  before the boot-order state-machine. The boot-count variable
+  is visible via device-tree /proc/device-tree/chosen/bootloader/count
+  and can be read/set via vcmailbox
+  GET: sudo vcmailbox 0x0003008d 4 4 0
+  SET to N: sudo vcmailbox 0x0003808d 4 4 N
+* pi5: Add user-defined reboot argument (boot_arg1) (experimental)
+  Add support for a user-defined boot parameter stored in a reset-safe
+  scratch register on BCM2712.  This is visible via device-tree at
+  /proc/device-tree/chosen/bootloader/arg1 and via vcmailboxes
+  GET arg1: sudo vcmailbox 0x0003008c 8 8 1 0
+  SET arg1 to 42: sudo vcmailbox 0x0003808c 8 8 1 42
+  or via config.txt
+  set_reboot_arg1=42
+  The variable is NOT cleared automatically and will persist until
+  a power-on-reset.
+* Enable overriding of high partition numbers
+  Previously, the PARTITION=N bootloader config setting would only
+  be used at power on reset or if the partition number passed to
+  reboot was zero.
+  Change the behaviour so that the bootloader config PARTITION
+  property can override the reboot partition number if the reboot
+  parameter is > 31.
+* Disable WiFi PMIC output on CM5 modules without WiFi
+  Disable the 3.7V WiFi power supply on CM5 modules which do not have a
+  WiFi module fitted. This fixes some stability issues where a CM5
+  would shutdown due to a spurious over-voltage condition on the
+  non-connected WiFi power supply.
+* Add memory barrier to the mbox handler
+  Firmware issue 1944 reports receiving kernel warnings about firmware
+  requests where the status return code is 0. This should not be
+  possible, as handle_mbox_property always sets the top bit of the return
+  code, with the bottom bit indicating success or failure. If the firmware
+  had died, the firmware driver would report a timeout due to the lack of
+  a mailbox interrupt, and that isn't happening.
+  See: https://github.com/raspberrypi/firmware/issues/1944
+* support dts files with size-cells of 2
+  DTS files with a top-level #size-cells of 2 make a lot of sense for
+  systems with a lot of RAM, but the firmware is currently inconsistent
+  in its support for that. Fix up the other cases to honor #size-cells
+  and #address-cells.
+* Disable SDIO2 for CM5s without WiFi
+  It has been observed that CM5s without WiFi hang on reboot. To prevent
+  that, disable the sdio2 node on those devices.
+  See: https://github.com/raspberrypi/linux/issues/6647
+* arm_dt: Use dtoverlay_enable_node
+  Convert the open-coded DT node status changes to use the new dtoverlay
+  method dtoverlay_enable_node.
+* dtoverlay: Add dtoverlay_enable_node
+  Add a helper function for setting the status of a node.
+
+## 2025-01-27: Walk the partition table if the requested partition is not bootable (latest)
+
+* Walk the partition table if the requested partition is not bootable
+  Previously, if the specified boot partition was not bootable the
+  bootloader would stop and advance to the next BOOT_ORDER. If the
+  new PARTITION_WALK option is set to 1 the bootloader will now
+  check each partition in turn starting from the specified partition
+  before advancing the BOOT_ORDER.
+  This feature is intended for use with A/B systems to handle the case
+  where autoboot.txt is missing / corrupted. This change enables
+  the system to failover to the next available bootable partition.
+  The autoboot.txt file is not scanned during the partition-walk
+  phase i.e. there is no recursive processing of autoboot.txt files.
+  This option is only supported on physical block devices
+  (SD, NVMe, USB) and not RAMDISK. USB assumes a single high speed
+  device, partition walks on multiple USB devices is not recommended
+  and may cause timeouts.
+* Improve keyboard handling in boot menu
+  Try and make it more likely that we have enough time to perform key
+  detection.
+  Ignore mice, which were being enumerated and slowing things down.
+
+## 2025-01-22: Promote 2025-01-22 to default release (default)
+
+## 2025-01-22: Add DT /chosen property signed-boot boot.img hash (latest)
+
+* Add DT /chosen property signed-boot boot.img hash
+  Make the sha256 hash of the boot.img file available via
+  device-tree /proc/device-tree/chosen/bootloader/boot_img_sha256 if
+  signed boot is enabled.
+* filesystem: GPT autoboot/reboot partition number fixes for Pi4 and older
+* Fix problems when setting arm_freq_min=arm_freq and display clocks
+  if performance governor is not enabled.
+
+## 2025-01-14: Add set_reboot_order API (latest)
+
+* Add set_reboot_order API and config.txt properties
+  If set_reboot_order is defined in config.txt or set via vcmailbox
+  then this will override the bootloader config BOOT_ORDER property
+  on the next reboot. The parameter is stored in a reset safe register
+  and is cleared by the bootloader after reading it.
+  Typically, the config.txt value only be used via rpiboot to
+  override the boot-order on the next reboot. Otherwise, it should
+  reside in a conditional section so that the boot order is not
+  overridden on every reboot.
+  Example, test network boot
+  sudo vcmailbox 0x0003808b 4 4 0xf4612; sudo reboot
+
+## 2025-01-13: Improved SDRAM refresh timings for Pi5 16GB (latest)
+
+* Improved SDRAM refresh timings for Pi5 - 16GB
+* Add an option to wait for the power button to be pressed before booting.
+  If POWER_OFF_ON_HALT=1 and WAIT_FOR_POWER_BUTTON=1 in the bootloader
+  config then the bootloader will wait for either the power button
+  to be pressed or an RTC alarm before booting. The wait state
+  switches the PMIC to STANDBY mode which is the lowest possible
+  power state.
+
+## 2025-01-08: Update SDRAM refresh timings for BCM2712D0 products (latest)
+
+* Update SDRAM timings for BCM2712D0 products.
+
+## 2025-01-07: Fixup M.2 HAT+ detection (latest)
+
+* Fix a potential timing issue introduced in the 2025-01-06
+  release when enabling PCIE_PWR when booting from SD/USB.
+
+## 2025-01-06: Stop the fan after after fan-probe (latest)
+
+* Stop the fan after after fan-probe
+  After the fan-probe has completed drive the fan PWM GPIO
+  to high if a fan was detected and let the OS take over.
+* Add SD_QUIRKS for hardware bringup / workarounds
+  Add a new SD_QUIRKS flags property which can be used to
+  disable high-speed mode (bit 0). Other bits are reserved for
+  future use.
+* Change uart_2ndstage default to 1 on Pi5
+  Change the default to 1 because this gives useful diagnostics
+  for device-tree loading with minimal overhead. Set uart_2ndstage=0
+  or BOOT_UART=0 to disable this.
+* Move M.2 HAT+ detection to early boot.
+  Initialse M.2 HAT+ detection before DDR init to give NVMe
+  drive firmware more time to boot.
+
+## 2024-12-19: Disable fan PWM before shutdown (latest)
+
+* Disable fan PWM before shutdown
+  Drive the RP1 fan PWM GPIO high before entering the VPU
+  sleep (POWER_OFF_ON_HALT=0) to stop the fan spinning.
+* Disable fan PWM GPIO between RP1 init and fan probe
+  Drive fan PWM GPIO high during early boot to disable the fan
+  until it is probed during the device-tree setup stage.
+  This stops the spinning at max rpm during network-install.
+* arm_dt: enable_uart defaults to 0 on 2712
+  The default value of enable_uart on 2712 is 0, regardless of the
+  presence of the debug UART cable, so guarantee that the default is
+  always set correctly.
+
+## 2024-12-15: Add net install to boot menu (latest)
+
+* Add net install to boot menu
+  Press N (or shift).
+* enable_uart: Require enable_uart=1 to enable RP1 UART console
+  See: https://github.com/raspberrypi/rpi-eeprom/issues/643
+
+## 2024-12-07: Enable banklow (and so NUMA) by default (latest)
+
+* Enable banklow (and so NUMA) by default
+  banklow=1 (2712) and banklow=3 (2711) give the best performance.
+* enable_uart=1 now enables a Linix UART console on the 40-pin header
+  unless a cable is detected on the dedicated boot-uart.
+* Recreate internal bl31 stub from clean git tree to fix dirty commit message.
+
 ## 2024-11-27: rp1fw: Add FIFO_STATE & DRAIN_TX, fix CAN_ADD_PROGRAM (default)
 
 * rp1fw: Add FIFO_STATE & DRAIN_TX, fix CAN_ADD_PROGRAM
