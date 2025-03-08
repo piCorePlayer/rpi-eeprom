@@ -2,7 +2,7 @@
 
 # pCP script to update Raspberry Pi4/5 boot EEPROM.
 
-VERSION="v2024.09.10-2712-2-pcp"
+VERSION="v27.4-1-pCP"
 
 . /etc/init.d/tc-functions
 . /var/www/cgi-bin/pcp-functions
