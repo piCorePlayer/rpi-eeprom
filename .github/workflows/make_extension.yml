@@ -55,7 +55,7 @@ jobs:
       - name: Create Extension
         id: make_tcz
         run: |
-            mksquashfs ./sqfs-root rpi-eeprom.tcz
+            mksquashfs ./sqfs-root rpi-eeprom.tcz -b 16384
             md5sum rpi-eeprom.tcz > rpi-eeprom.tcz.md5.txt
 
       - name: List Extension
