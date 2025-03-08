@@ -42,17 +42,6 @@ jobs:
              cp -r rpi_eeprom_git/firmware-2712/beta sqfs-root/lib/firmware/raspberrypi/bootloader-2712/
              cp rpi_eeprom_git/firmware-2712/release-notes.md sqfs-root/lib/firmware/raspberrypi/bootloader-2712/
 
-      - name: Create a Release in a GitHub Action
-        id: create_release
-        uses: comnoco/create-release-action@v2.0.5
-        env:
-          GITHUB_TOKEN: ${{ secrets.RPI_EEPROM_RELEASE }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
-
       - name: Create Extension
         id: make_tcz
         run: |
@@ -62,24 +51,16 @@ jobs:
       - name: List Extension
         run: unsquashfs -ll rpi-eeprom.tcz
 
-      - name: Upload Release Asset
-        id: upload-release-asset-tcz
-        uses: actions/upload-release-asset@v1
+      - name: Create a Release in a GitHub Action
+        id: create_release
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.RPI_EEPROM_RELEASE }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./rpi-eeprom.tcz
-          asset_name: rpi-eeprom.tcz
-          asset_content_type: application/data
-
-      - name: Upload Release Asset
-        id: upload-release-asset-md5
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.RPI_EEPROM_RELEASE }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./rpi-eeprom.tcz.md5.txt
-          asset_name: rpi-eeprom.tcz.md5.txt
-          asset_content_type: application/data
+          tag_name: ${{ github.ref }}
+          name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: |
+            rpi-eeprom.tcz
+            rpi-eeprom.tcz.md5.txt
