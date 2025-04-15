@@ -1,5 +1,65 @@
 # Raspberry Pi5 bootloader EEPROM release notes
 
+## 2025-04-07: arm_dt: Revert to using the max fan speed (latest)
+
+* arm_dt: Revert to using the max fan speed
+  It has been reported that the presence of a cooling fan at boot time
+  can lead to a maximum observed fan speed of ~300 but a current speed
+  of 0. The absence of a fan results in 0s for both metrics.
+  See: https://github.com/raspberrypi/rpi-eeprom/issues/690
+
+## 2025-03-27: os_check: cm5: Check for CM5 specific dtbs (latest)
+
+* os_check: cm5: Check for CM5 specific dtbs
+  Check for BCM2712 support in bcm2712-rpi-cm5-cm5io.dtb
+  or bcm2712-rpi-cm5l-cm5io.dtb on CM5 instead of bcm2712-rpi-5-b.dtb.
+  This avoids needing to put os_check=1 or specifying device_tree
+  in config.txt in minimal images for CM5.
+  See: https://github.com/raspberrypi/rpi-eeprom/issues/682
+
+## 2025-03-19: Log the fan speed at boot (latest)
+
+* Log the fan speed at boot
+  Record the fan RPM (and the maximum seen) during boot, so that it is
+  accessible using "sudo vclog -m".
+  See: https://github.com/raspberrypi/rpi-eeprom/issues/678
+* Add current_supply to HAT+ support
+  Refactor the HAT library to make it more self-contained, and combine
+  the I2C address detection and the reading of the EEPROM contents.
+  Use it to allow the earlier boot stages to check for a current_supply
+  setting in the EEPROM of a normal (non-stackable) HAT+.
+
+## 2025-03-10: Promote 2025-03-10 release to default (default)
+
+## 2025-03-10: Add [boot_partition] filter plus SDRAM init fixes (latest)
+
+* Update SDRAM init timings to intermittent 8-flash SDRAM init errors
+  on some boards.
+  See: https://github.com/raspberrypi/rpi-eeprom/issues/67
+* config: Fix missing initialisation of selected_expr to 1 in config.txt
+  Without an [all] section the new expression filter might default to
+  false. This impacts the bootloader early parsing of config.txt
+  for things like boot_ramdisk rather than the later config.txt pass
+  for device-tree parsing.
+* config_loader: Add support [boot_partition=N] as an expression filter
+  The boot_partition tests whether the partition number N matches
+  the number that the system is booting from. This expression is
+  only supported in config.txt and is designed to make it easier
+  to have common boot.img ramdisks in an A/B system where the
+  conditional loads a different cmdline.txt file depending on
+  which partition boot.img is loaded from.
+
+## 2025-03-03: Fix bootloader pull configuration on 2712D0 (latest)
+
+* Fix pull configuration on 2712D0
+  2712D0 uses a horrendously sparse set of pad control registers. Make
+  the pull-setting code sufficiently complex to cope.
+  See: https://github.com/raspberrypi/rpi-eeprom/issues/672
+* Disable UARTA for CM5s without WiFi
+  Just as CM5s without WiFI don't need the SDIO interface, the Bluetooth
+  UART is unconnected. Disable the DT node to avoid kernel warnings and
+  save some cycles.
+
 ## 2025-02-17: Promote 2025-02-12 to the default release (default)
 
 ## 2025-02-12: Fixup change to disable 3.7V PMIC output on CM5 no-wifi (latest)
