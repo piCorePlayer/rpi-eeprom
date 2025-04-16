@@ -22,11 +22,15 @@ jobs:
              mkdir -p sqfs-root/lib/firmware/raspberrypi/bootloader-2712
              mkdir -p sqfs-root/usr/local/bin
              mkdir -p sqfs-root/etc/default
+             mkdir -p sqfs-root/usr/local/share/rpi-eeprom
              cp rpi_eeprom_git/rpi-eeprom-config sqfs-root/usr/local/bin/
              cp rpi_eeprom_git/rpi-eeprom-digest sqfs-root/usr/local/bin/
              cp rpi_eeprom_git/rpi-eeprom-update sqfs-root/usr/local/bin/
-             cp rpi_eeprom_git/pcp-rpi-eeprom-update sqfs-root/usr/local/bin/
+             cp rpi_eeprom_git/pcp-rpi-eeprom-* sqfs-root/usr/local/bin/
              cp rpi_eeprom_git/rpi-eeprom-update-default-pcp sqfs-root/etc/default/rpi-eeprom-update
+             chmod 755 sqfs-root/usr/local/bin/*
+
+             cp rpi_eeprom_git/LICENSE sqfs-root/usr/local/share/rpi-eeprom
 
              cp -r rpi_eeprom_git/firmware-2711/default sqfs-root/lib/firmware/raspberrypi/bootloader-2711/
              cp -r rpi_eeprom_git/firmware-2711/latest sqfs-root/lib/firmware/raspberrypi/bootloader-2711/
@@ -49,7 +53,7 @@ jobs:
             md5sum rpi-eeprom.tcz > rpi-eeprom.tcz.md5.txt
 
       - name: List Extension
-        run: unsquashfs -ll rpi-eeprom.tcz
+        run: unsquashfs -ll rpi-eeprom.tcz | tee rpi-eeprom.tcz.list
 
       - name: Create a Release in a GitHub Action
         id: create_release
@@ -64,3 +68,4 @@ jobs:
           files: |
             rpi-eeprom.tcz
             rpi-eeprom.tcz.md5.txt
+            rpi-eeprom.tcz.list
