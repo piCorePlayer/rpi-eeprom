@@ -5,11 +5,13 @@ on:
     tags:
     - 'v*'
 
+  workflow_dispatch:
+
 jobs:
   build:
     name: Create Extension
-#    runs-on: ubuntu-latest
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
+#    runs-on: self-hosted
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -18,33 +20,31 @@ jobs:
 
       - name: Copy Code
         run: |
-             mkdir -p sqfs-root/lib/firmware/raspberrypi/bootloader-2711
-             mkdir -p sqfs-root/lib/firmware/raspberrypi/bootloader-2712
+             mkdir -p sqfs-root/usr/local/lib/firmware/raspberrypi
              mkdir -p sqfs-root/usr/local/bin
              mkdir -p sqfs-root/etc/default
              mkdir -p sqfs-root/usr/local/share/rpi-eeprom
+
+             #Copy executables
              cp rpi_eeprom_git/rpi-eeprom-config sqfs-root/usr/local/bin/
              cp rpi_eeprom_git/rpi-eeprom-digest sqfs-root/usr/local/bin/
              cp rpi_eeprom_git/rpi-eeprom-update sqfs-root/usr/local/bin/
              cp rpi_eeprom_git/pcp-rpi-eeprom-* sqfs-root/usr/local/bin/
-             cp rpi_eeprom_git/rpi-eeprom-update-default-pcp sqfs-root/etc/default/rpi-eeprom-update
+             cp rpi_eeprom_git/tools/rpi* sqfs-root/usr/local/bin/
              chmod 755 sqfs-root/usr/local/bin/*
 
+             # Copy default variables
+             cp rpi_eeprom_git/rpi-eeprom-update-default-pcp sqfs-root/etc/default/rpi-eeprom-update
+
+             # Copy License file
              cp rpi_eeprom_git/LICENSE sqfs-root/usr/local/share/rpi-eeprom
 
-             cp -r rpi_eeprom_git/firmware-2711/default sqfs-root/lib/firmware/raspberrypi/bootloader-2711/
-             cp -r rpi_eeprom_git/firmware-2711/latest sqfs-root/lib/firmware/raspberrypi/bootloader-2711/
-             cp -r rpi_eeprom_git/firmware-2711/critical sqfs-root/lib/firmware/raspberrypi/bootloader-2711/
-             cp -r rpi_eeprom_git/firmware-2711/stable sqfs-root/lib/firmware/raspberrypi/bootloader-2711/
-             cp -r rpi_eeprom_git/firmware-2711/beta sqfs-root/lib/firmware/raspberrypi/bootloader-2711/
-             cp rpi_eeprom_git/firmware-2711/release-notes.md sqfs-root/lib/firmware/raspberrypi/bootloader-2711/
+             # Copy Firmware, removing archived firmware
+             cp -av rpi_eeprom_git/firmware-2711 sqfs-root/usr/local/lib/firmware/raspberrypi
+             rm -rf sqfs-root/usr/local/lib/firmware/raspberrypi/firmware-2711/old
 
-             cp -r rpi_eeprom_git/firmware-2712/default sqfs-root/lib/firmware/raspberrypi/bootloader-2712/
-             cp -r rpi_eeprom_git/firmware-2712/latest sqfs-root/lib/firmware/raspberrypi/bootloader-2712/
-             cp -r rpi_eeprom_git/firmware-2712/critical sqfs-root/lib/firmware/raspberrypi/bootloader-2712/
-             cp -r rpi_eeprom_git/firmware-2712/stable sqfs-root/lib/firmware/raspberrypi/bootloader-2712/
-             cp -r rpi_eeprom_git/firmware-2712/beta sqfs-root/lib/firmware/raspberrypi/bootloader-2712/
-             cp rpi_eeprom_git/firmware-2712/release-notes.md sqfs-root/lib/firmware/raspberrypi/bootloader-2712/
+             cp -av rpi_eeprom_git/firmware-2712 sqfs-root/usr/local/lib/firmware/raspberrypi
+             rm -rf sqfs-root/usr/local/lib/firmware/raspberrypi/firmware-2712/old
 
       - name: Create Extension
         id: make_tcz
@@ -53,7 +53,9 @@ jobs:
             md5sum rpi-eeprom.tcz > rpi-eeprom.tcz.md5.txt
 
       - name: List Extension
-        run: unsquashfs -ll rpi-eeprom.tcz | tee rpi-eeprom.tcz.list
+        run: |
+            unsquashfs -ll rpi-eeprom.tcz
+            unsquashfs -l rpi-eeprom.tcz | sed 's|squashfs-root/||' > rpi-eeprom.tcz.list
 
       - name: Create a Release in a GitHub Action
         id: create_release
