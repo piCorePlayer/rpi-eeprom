@@ -42,9 +42,11 @@ jobs:
              # Copy Firmware, removing archived firmware
              cp -av rpi_eeprom_git/firmware-2711 sqfs-root/usr/local/lib/firmware/raspberrypi
              rm -rf sqfs-root/usr/local/lib/firmware/raspberrypi/firmware-2711/old
+             mv sqfs-root/usr/local/lib/firmware/raspberrypi/firmware-2711 sqfs-root/usr/local/lib/firmware/raspberrypi/bootloader-2711
 
              cp -av rpi_eeprom_git/firmware-2712 sqfs-root/usr/local/lib/firmware/raspberrypi
              rm -rf sqfs-root/usr/local/lib/firmware/raspberrypi/firmware-2712/old
+             mv sqfs-root/usr/local/lib/firmware/raspberrypi/firmware-2712 sqfs-root/usr/local/lib/firmware/raspberrypi/bootloader-2712
 
       - name: Create Extension
         id: make_tcz
