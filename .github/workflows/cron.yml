@@ -1,0 +1,46 @@
+name: Version Check
+
+on:
+  workflow_dispatch:
+#  schedule:
+#    - cron: '15 2 * * *'
+
+jobs:
+  Check:
+    name: Check if update needed
+    if: ${{ github.repository_owner == 'piCorePlayer' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const response = await fetch('https://raw.githubusercontent.com/raspberrypi/rpi-eeprom/pios/bookworm/debian/changelog');
+            if (!response.ok){
+              console.error('Fetching rpi changelog failed' + response.status);
+              return false;
+            }
+            const changelog = await response.text();
+            const firstLine = changelog.split('\n')[0];
+            const match = firstLine.match(/\(([^)]+)\)/);
+            const changelogVersion = match ? match[1] : null;
+            console.log('First line:', firstLine);
+            console.log('Parsed version:', changelogVersion);
+
+            // Fetch latest GitHub release tag
+            const release = await github.rest.repos.getLatestRelease({
+                owner: 'piCorePlayer',
+                repo: 'rpi-eeprom'
+            });
+            const releaseTag = release.data.tag_name; // e.g., 'v27.9-1'
+            // Remove 'v' prefix if present
+            const githubVersion = releaseTag.startsWith('v') ? releaseTag.slice(1) : releaseTag;
+
+            console.log('Changelog version:', changelogVersion);  
+            console.log('GitHub release version:', githubVersion);
+
+            // Example comparison (string equality)
+            if (changelogVersion === githubVersion) {
+                console.log('Versions match!');
+            } else {
+               console.log('Versions differ!');
+            }
