@@ -48,3 +48,8 @@ jobs:
           git add pcp-rpi-eeprom-update
           git commit -m "Update Version for Release ${{ github.event.inputs.changelogVersion }}-pCP"
           git push origin HEAD:${{ github.ref_name }}
+
+      - name: Run workflow make_extension
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run make_extension.yml --repo piCorePlayer/rpi-eeprom --ref pCP
