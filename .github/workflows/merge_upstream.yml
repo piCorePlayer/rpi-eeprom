@@ -1,0 +1,50 @@
+name: Merge Upstream Repository
+# This only is called from Version Check
+
+on:
+  workflow_dispatch:
+    inputs:
+      changelogVersion:
+        required: true
+        type: string
+
+jobs:
+  merge-upstream:
+    name: Merge Upstream
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout your repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          # Need to fetch everything due to past history differences
+          fetch-depth: '0'
+
+      - name: Set up Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Add upstream remote
+        run: |
+          git remote add upstream https://github.com/raspberrypi/rpi-eeprom.git
+          git fetch upstream
+
+      - name: Merge upstream branch
+        run: |
+          git merge --no-ff --strategy=ort --allow-unrelated-histories --no-edit upstream/master || { echo "Merge conflict detected"; git status; git diff; exit 1; }
+
+      - name: Push merge commit to your repo
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git push origin HEAD:${{ github.ref_name }}
+
+      - name: Update package version
+        run: |
+          sed -i 's/\(VERSION=\).*/\1\"${{ github.event.inputs.changelogVersion }}-pCP\"/' pcp-rpi-eeprom-update
+          git add pcp-rpi-eeprom-update
+          git commit -m "Update Version for Release ${{ github.event.inputs.changelogVersion }}-pCP"
+          git push origin HEAD:${{ github.ref_name }}

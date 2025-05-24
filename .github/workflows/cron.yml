@@ -2,8 +2,6 @@ name: Version Check
 
 on:
   workflow_dispatch:
-#  schedule:
-#    - cron: '15 2 * * *'
 
 jobs:
   Check:
@@ -26,21 +24,27 @@ jobs:
             console.log('First line:', firstLine);
             console.log('Parsed version:', changelogVersion);
 
-            // Fetch latest GitHub release tag
-            const release = await github.rest.repos.getLatestRelease({
-                owner: 'piCorePlayer',
-                repo: 'rpi-eeprom'
-            });
-            const releaseTag = release.data.tag_name; // e.g., 'v27.9-1'
-            // Remove 'v' prefix if present
-            const githubVersion = releaseTag.startsWith('v') ? releaseTag.slice(1) : releaseTag;
 
+            const release = await github.rest.repos.getLatestRelease({ owner: 'piCorePlayer', repo: 'rpi-eeprom' });
+            const releaseTag = release.data.tag_name;
+
+            const githubTag = releaseTag.startsWith('v') ? releaseTag.slice(1) : releaseTag;
+            const githubVersion = githubTag.split('-').slice(0, 2).join('-');
+            
             console.log('Changelog version:', changelogVersion);  
             console.log('GitHub release version:', githubVersion);
 
-            // Example comparison (string equality)
             if (changelogVersion === githubVersion) {
                 console.log('Versions match!');
             } else {
-               console.log('Versions differ!');
+               console.log('Versions differ, triggering update workflow...');
+               await github.rest.actions.createWorkflowDispatch({
+                 owner: 'piCorePlayer',
+                 repo: 'rpi-eeprom',
+                 workflow_id: 'merge_upstream.yml',
+                 ref: 'pCP',
+                 inputs: {
+                   changelogVersion
+                 }
+               });
             }
