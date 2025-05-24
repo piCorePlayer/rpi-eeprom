@@ -1,72 +1,98 @@
 name: Release Extension
 
 on:
-  push:
-    tags:
-    - 'v*'
-
   workflow_dispatch:
 
 jobs:
   build:
     name: Create Extension
+    if: ${{ github.repository_owner == 'piCorePlayer' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
-#    runs-on: self-hosted
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           path: rpi_eeprom_git
 
-      - name: Copy Code
+      - name: Get Current Version
+        id: get-version
         run: |
-             mkdir -p sqfs-root/usr/local/lib/firmware/raspberrypi
-             mkdir -p sqfs-root/usr/local/bin
-             mkdir -p sqfs-root/etc/default
-             mkdir -p sqfs-root/usr/local/share/rpi-eeprom
+          grep "^VERSION=" rpi_eeprom_git/pcp-rpi-eeprom-update | tr -d '"' >> $GITHUB_OUTPUT
 
-             #Copy executables
-             cp rpi_eeprom_git/rpi-eeprom-config sqfs-root/usr/local/bin/
-             cp rpi_eeprom_git/rpi-eeprom-digest sqfs-root/usr/local/bin/
-             cp rpi_eeprom_git/rpi-eeprom-update sqfs-root/usr/local/bin/
-             cp rpi_eeprom_git/pcp-rpi-eeprom-* sqfs-root/usr/local/bin/
-             cp rpi_eeprom_git/tools/rpi* sqfs-root/usr/local/bin/
-             chmod 755 sqfs-root/usr/local/bin/*
+      - name: Check Current Release
+        id: current-release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const version = process.env.VERSION
+            const release = await github.rest.repos.getLatestRelease({ owner: 'piCorePlayer', repo: 'rpi-eeprom' });
+            const releaseTag = release.data.tag_name;
+            const githubTag = releaseTag.startsWith('v') ? releaseTag.slice(1) : releaseTag;
+            console.log('VERSION:', version );  
+            console.log('GitHub release version:', githubTag);
+            if (version === githubTag) {
+              core.setOutput('should_release', 'false');
+              console.log('Versions match! Skipping release.');
+            } else {
+              core.setOutput('should_release', 'true');
+              console.log('Versions different...releasing!');
+            }
+        env:
+          VERSION: ${{ steps.get-version.outputs.VERSION }}
 
-             # Copy default variables
-             cp rpi_eeprom_git/rpi-eeprom-update-default-pcp sqfs-root/etc/default/rpi-eeprom-update
+      - name: Copy Code
+        if: steps.current-release.outputs.should_release == 'true'
+        run: |
+          mkdir -p sqfs-root/usr/local/lib/firmware/raspberrypi
+          mkdir -p sqfs-root/usr/local/bin
+          mkdir -p sqfs-root/etc/default
+          mkdir -p sqfs-root/usr/local/share/rpi-eeprom
 
-             # Copy License file
-             cp rpi_eeprom_git/LICENSE sqfs-root/usr/local/share/rpi-eeprom
+          # Copy executables
+          cp rpi_eeprom_git/rpi-eeprom-config sqfs-root/usr/local/bin/
+          cp rpi_eeprom_git/rpi-eeprom-digest sqfs-root/usr/local/bin/
+          cp rpi_eeprom_git/rpi-eeprom-update sqfs-root/usr/local/bin/
+          cp rpi_eeprom_git/pcp-rpi-eeprom-* sqfs-root/usr/local/bin/
+          cp rpi_eeprom_git/tools/rpi* sqfs-root/usr/local/bin/
+          chmod 755 sqfs-root/usr/local/bin/*
+ 
+          # Copy default variables
+          cp rpi_eeprom_git/rpi-eeprom-update-default-pcp sqfs-root/etc/default/rpi-eeprom-update
 
-             # Copy Firmware, removing archived firmware
-             cp -av rpi_eeprom_git/firmware-2711 sqfs-root/usr/local/lib/firmware/raspberrypi
-             rm -rf sqfs-root/usr/local/lib/firmware/raspberrypi/firmware-2711/old
-             mv sqfs-root/usr/local/lib/firmware/raspberrypi/firmware-2711 sqfs-root/usr/local/lib/firmware/raspberrypi/bootloader-2711
+          # Copy License file
+          cp rpi_eeprom_git/LICENSE sqfs-root/usr/local/share/rpi-eeprom
 
-             cp -av rpi_eeprom_git/firmware-2712 sqfs-root/usr/local/lib/firmware/raspberrypi
-             rm -rf sqfs-root/usr/local/lib/firmware/raspberrypi/firmware-2712/old
-             mv sqfs-root/usr/local/lib/firmware/raspberrypi/firmware-2712 sqfs-root/usr/local/lib/firmware/raspberrypi/bootloader-2712
+          # Copy Firmware, removing archived firmware
+          cp -av rpi_eeprom_git/firmware-2711 sqfs-root/usr/local/lib/firmware/raspberrypi
+          rm -rf sqfs-root/usr/local/lib/firmware/raspberrypi/firmware-2711/old
+          mv sqfs-root/usr/local/lib/firmware/raspberrypi/firmware-2711 sqfs-root/usr/local/lib/firmware/raspberrypi/bootloader-2711
+
+          cp -av rpi_eeprom_git/firmware-2712 sqfs-root/usr/local/lib/firmware/raspberrypi
+          rm -rf sqfs-root/usr/local/lib/firmware/raspberrypi/firmware-2712/old
+          mv sqfs-root/usr/local/lib/firmware/raspberrypi/firmware-2712 sqfs-root/usr/local/lib/firmware/raspberrypi/bootloader-2712
 
       - name: Create Extension
         id: make_tcz
+        if: steps.current-release.outputs.should_release == 'true'
         run: |
-            mksquashfs ./sqfs-root rpi-eeprom.tcz -b 16384
-            md5sum rpi-eeprom.tcz > rpi-eeprom.tcz.md5.txt
+          mksquashfs ./sqfs-root rpi-eeprom.tcz -b 16384
+          md5sum rpi-eeprom.tcz > rpi-eeprom.tcz.md5.txt
 
       - name: List Extension
+        if: steps.current-release.outputs.should_release == 'true'
         run: |
-            unsquashfs -ll rpi-eeprom.tcz
-            unsquashfs -l rpi-eeprom.tcz | sed 's|squashfs-root/||' > rpi-eeprom.tcz.list
+          unsquashfs -ll rpi-eeprom.tcz
+          unsquashfs -l rpi-eeprom.tcz | sed 's|squashfs-root/||' > rpi-eeprom.tcz.list
 
       - name: Create a Release in a GitHub Action
+        if: steps.current-release.outputs.should_release == 'true'
         id: create_release
         uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.RPI_EEPROM_RELEASE }}
         with:
-          tag_name: ${{ github.ref }}
-          name: Release ${{ github.ref_name }}
+          tag_name: v${{ steps.get-version.outputs.VERSION }}
+          name: Release v${{ steps.get-version.outputs.VERSION }}
           draft: false
           prerelease: false
           files: |
