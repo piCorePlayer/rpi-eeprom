@@ -34,7 +34,7 @@ jobs:
 
       - name: Merge upstream branch
         run: |
-          git merge --no-ff --strategy=ort --allow-unrelated-histories --no-edit upstream/master || { echo "Merge conflict detected"; git status; git diff; exit 1; }
+          git merge --no-ff --strategy=ort --allow-unrelated-histories --no-edit upstream/pios/bookworm || { echo "Merge conflict detected"; git status; git diff; exit 1; }
 
       - name: Push merge commit to your repo
         env:
