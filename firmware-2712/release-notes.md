@@ -1,5 +1,57 @@
 # Raspberry Pi5 bootloader EEPROM release notes
 
+## 2025-06-20: Add support for a bootloader watchdog (latest)
+
+* Add support for a bootloader watchdog
+  Add support for a boot watchdog (using PM_RSTC hw wdog) which will
+  trigger if the OS is not started within the specified amount of time. The
+  watchdog is enabled by setting the BOOT_WATCHDOG_TIMEOUT=N (seconds)
+  property in the bootlaoder config.
+  The BOOT_WATCHDOG_PARTITION=P property can be set to pass a different
+  partition number to the bootloader on reset if the watchdog
+  is triggered.
+  The boot watchdog is automatically cleared just before starting
+  the OS and (optionally) enabling the kernel watchdog.
+* pi5: Add a temperature monitor
+  In early releases of the bootloader the fan would always be on
+  during boot which can be distracting. Later releases switch off the
+  fan until the OS has booted.
+  This change adds some basic fan control from the bootloader to
+  enable the fan if the temperature is above 85C.
+  This may be useful if the Pi was shutdown by the OS because the
+  temperature limit was exceeded.
+  Since the Linux hwmon is not active at this stage the bootloader
+  now implements the same logic to power off the Pi if the chips
+  is more than 110C.
+  The PMIC hardware automatically cuts power if the temperature
+  is more than 125C.
+* Skip first SD boot if no card detected
+  On platforms with an SD Card detect signal, skip the first attempt to
+  boot from SD if the card appears to be absent. This can save over a
+  second on a cold boot, and a little under a second for a reboot.
+
+## 2025-06-13: Update to include production test changes (latest)
+* Update to include production test changes.
+
+## 2025-06-09: NVMe: Fix loading of files > 32MB (latest)
+
+* NVMe: Fix loading of files > 32MB
+  Fix an NVMe boot bug which caused large contiguous reads >= 32MB to fail.
+* Update setting alpha for 2712D0
+  D0 moved the alpha blend mode from CTL2 to CTL0.
+  Update the bootloader code to follow suit for those using
+  the simple framebuffer
+* dtoverlay: Fix node_is_enabled for implicit status
+  The absence of a status property implies that a node is enabled. Update
+  dtoverlay_node_is_enabled to match that behaviour.
+  See: https://github.com/raspberrypi/firmware/issues/1970
+* arm_loader: GET_CLOCKS: Set useful response length
+  The kernel's firmware mailbox API does not make the actual length of the
+  response available to clients, but other implementations may care.
+  Continue to pad the GET_CLOCKS buffer with zeroes, but set the response
+  length to minimally contain the useful content.
+  See: https://github.com/raspberrypi/firmware/issues/1969
+
 ## 2025-05-13: Promote 2025-05-08 to the default release (default)
 
 ## 2025-05-08: Implement TCP window for net boot (latest)
