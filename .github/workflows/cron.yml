@@ -3,7 +3,7 @@ name: Version Check
 on:
   workflow_dispatch:
   schedule:
-    - cron:  '20 3 * * *'
+    - cron:  '20 3 * * 6'
 
 jobs:
   Check:
@@ -14,29 +14,53 @@ jobs:
       - uses: actions/github-script@v7
         with:
           script: |
-            const response = await fetch('https://raw.githubusercontent.com/raspberrypi/rpi-eeprom/pios/bookworm/debian/changelog');
-            if (!response.ok){
-              console.error('Fetching rpi changelog failed' + response.status);
+            const package = await fetch('https://archive.raspberrypi.org/debian/dists/bookworm/main/binary-arm64/Packages');
+            if (!package.ok) {
+              console.error('Fetching Packages failed' + package.status);
               return false;
             }
-            const changelog = await response.text();
-            const firstLine = changelog.split('\n')[0];
-            const match = firstLine.match(/\(([^)]+)\)/);
-            const changelogVersion = match ? match[1] : null;
-            console.log('First line:', firstLine);
-            console.log('Parsed version:', changelogVersion);
 
+            const Packages = await package.text();
+            const lines = Packages.split('\n');
+            var found = 0;
+            for (let i = 0; i < lines.length; i++) {
+              if (lines[i].indexOf('Package: rpi-eeprom') == 0 && lines[i].length <= 20 ) {
+                console.log ('Package Line: ', lines[i]);
+                found = i;
+                break;
+              }
+            }
+            if (found > 0) {
+              for (let i = found; i < lines.length; i++) {
+                if (lines[i].indexOf('Version: ') != -1 ) {
+                  if ( i > found + 20 ) {
+                    console.log('Version range incorrect');
+                    return false;
+                  } else {
+                    found = i;
+                    console.log('Version Line: ', lines[i]);
+                    break;
+                  }
+                }
+              }
+            } else {
+              console.log('Package rpi-eeprom not found');
+              return false;
+            }
+
+            const raspiOSVersion = lines[found].split(': ')[1];
+            console.log('Parsed version:', raspiOSVersion);
 
             const release = await github.rest.repos.getLatestRelease({ owner: 'piCorePlayer', repo: 'rpi-eeprom' });
             const releaseTag = release.data.tag_name;
 
             const githubTag = releaseTag.startsWith('v') ? releaseTag.slice(1) : releaseTag;
             const githubVersion = githubTag.split('-').slice(0, 2).join('-');
-            
-            console.log('Changelog version:', changelogVersion);  
+
+            console.log('Changelog version:', raspiOSVersion);
             console.log('GitHub release version:', githubVersion);
 
-            if (changelogVersion === githubVersion) {
+            if (raspiOSVersion === githubVersion) {
                 console.log('Versions match!');
             } else {
                console.log('Versions differ, triggering update workflow...');
@@ -46,7 +70,7 @@ jobs:
                  workflow_id: 'merge_upstream.yml',
                  ref: 'pCP',
                  inputs: {
-                   changelogVersion
+                   raspiOSVersion
                  }
                });
             }

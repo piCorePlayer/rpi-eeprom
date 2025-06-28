@@ -4,7 +4,7 @@ name: Merge Upstream Repository
 on:
   workflow_dispatch:
     inputs:
-      changelogVersion:
+      raspiOSVersion:
         required: true
         type: string
 
@@ -34,7 +34,7 @@ jobs:
 
       - name: Merge upstream branch
         run: |
-          git merge --no-ff --strategy=ort --allow-unrelated-histories --no-edit upstream/pios/bookworm || { echo "Merge conflict detected"; git status; git diff; exit 1; }
+          git merge --no-ff --strategy=ort --allow-unrelated-histories --no-edit upstream/master || { echo "Merge conflict detected"; git status; git diff; exit 1; }
 
       - name: Push merge commit to your repo
         env:
@@ -44,9 +44,9 @@ jobs:
 
       - name: Update package version
         run: |
-          sed -i 's/\(VERSION=\).*/\1\"${{ github.event.inputs.changelogVersion }}-pCP\"/' pcp-rpi-eeprom-update
+          sed -i 's/\(VERSION=\).*/\1\"${{ github.event.inputs.raspiOSVersion }}-pCP\"/' pcp-rpi-eeprom-update
           git add pcp-rpi-eeprom-update
-          git commit -m "Update Version for Release ${{ github.event.inputs.changelogVersion }}-pCP"
+          git commit -m "Update Version for Release ${{ github.event.inputs.raspiOSVersion }}-pCP"
           git push origin HEAD:${{ github.ref_name }}
 
       - name: Run workflow make_extension
