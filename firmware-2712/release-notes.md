@@ -1,5 +1,66 @@
 # Raspberry Pi5 bootloader EEPROM release notes
 
+## 2025-07-17: Fix config key search which could cause camera_autodetect to fail (latest)
+
+* Fix config key search which could cause camera_autodetect to fail
+  The bootvar0 config property was added in the wrong section which
+  could cause the config property search for some other properties
+  to fail.
+
+## 2025-07-17: arm_loader: Also require the early-watchdog property (latest)
+
+* arm_loader: Also require the early-watchdog property
+  The change correcting the implementation of dtoverlay_is_enabled had the
+  unintended consequence of causing the firmware to enable the watchdog
+  even though the user had not explicitly requested it. This is harmless
+  on Linux because the watchdog driver takes over and disarms it, but on
+  other operating systems this can lead to a reboot. Avoid this problem
+  by also requiring the presence of a new property, "early-watchdog".
+  See: https://github.com/raspberrypi/firmware/issues/1980
+* helpers/config_loader: Add bootvar0 eeprom config that can be used in config.txt section expressions
+  This allows an eeprom config setting (e.g. BOOTVAR0=0x10) to be set on a board
+  which config.txt can use as a conditional expression (e.g. [bootvar0&0x10]).
+* arm_loader: Fix boot-watchdog stop on Pi4
+  Fix a problem where the boot_watchdog heartbeat timer was not
+  stopped correctly which could cause it to clash with the kernel
+  watchdog driver.
+
+## 2025-07-03: Enable firmware UART output on the 40-pin header (latest)
+
+* rp1_uart: Allow rp1_uart to be started earlier
+  If enabled (with enable_rp1_uart) then the existing boot uart
+  messages are redirected to the rp1 uart.
+
+## 2025-06-29: Check for SD card overcurrent on Pi5 and Pi500 (latest)
+
+* board_info: Use the Ethernet PHY address probed by the bootloader
+  Use the Ethernet PHY address supplied by the bootloader in
+  preference to the static configurations defined in start4.elf
+* pi5: Fix overwrite of cache EEPROM config in secure-boot mode
+  See: https://github.com/raspberrypi/rpi-eeprom/issues/719
+* Check for SD card overcurrent on Pi5, Pi500 and Pi4
+  Before booting, the bootloader now checks the SD power switch
+  overcurrent signal. The overcurrent signal occurs if the SD
+  card is damaged and has a short circuit which will cause it to
+  get hot.
+  If an over-current condition is detected the bootloader 
+  switches off power to the SD card and waits five seconds before
+  probing the SD card again. This error is displayed on the
+  diagnostic screen, the UART and the activity LED (1 long, 2 short)
+  flashes.
+  The check can be switched to a non-blocking warning  by setting
+  SD_OVERCURRENT_CHECK=0 in the bootloader config.
+* Add a new error code pattern for SD overcurrent
+  Add a new error pattern (1 long, 2 short) to signal SD card
+  overcurrent.
+* Enable RTC wakeup from POWER_OFF_ON_HALT=0
+* Improve HAT+ current handling
+  In shipping firmware, the current_supply value is only being used in the
+  case of a normal (non-stacked) HAT+, but that is unnecessarily
+  restrictive. Also, the presence of MODE0 and MODE1 power HATs is not
+  reflected in the value of max_current.
+  See: https://github.com/raspberrypi/linux/pull/6678
+
 ## 2025-06-20: Add support for a bootloader watchdog (latest)
 
 * Add support for a bootloader watchdog
