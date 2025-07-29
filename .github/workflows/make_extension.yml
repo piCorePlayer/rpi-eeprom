@@ -12,6 +12,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
+          ref: pCP
           path: rpi_eeprom_git
 
       - name: Get Current Version
