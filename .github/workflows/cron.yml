@@ -48,7 +48,8 @@ jobs:
               return false;
             }
 
-            const raspiOSVersion = lines[found].split(': ')[1];
+            const Versionline = lines[found].split(': ')[1];
+            const raspiOSVersion = Versionline.split('~')[0];
             console.log('Parsed version:', raspiOSVersion);
 
             const release = await github.rest.repos.getLatestRelease({ owner: 'piCorePlayer', repo: 'rpi-eeprom' });
