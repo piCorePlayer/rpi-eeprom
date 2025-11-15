@@ -14,7 +14,7 @@ jobs:
       - uses: actions/github-script@v7
         with:
           script: |
-            const package = await fetch('https://archive.raspberrypi.org/debian/dists/bookworm/main/binary-arm64/Packages');
+            const package = await fetch('https://archive.raspberrypi.org/debian/dists/trixie/main/binary-arm64/Packages');
             if (!package.ok) {
               console.error('Fetching Packages failed' + package.status);
               return false;
