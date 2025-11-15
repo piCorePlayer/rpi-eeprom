@@ -33,10 +33,10 @@ update_ext() {
 	   $WGET -q https://github.com/piCorePlayer/rpi-eeprom/releases/latest/download/rpi-eeprom.tcz -P /tmp
 	fi
 
+	[ -d $UPGRADE_DIR ] || mkdir -p $UPGRADE_DIR
 	cd /tmp
 	echo "[ INFO ] Validating MD5's of new extensions"
 	$MD5 -cs rpi-eeprom.tcz.md5.txt
-	[ -d $UPGRADE_DIR ] || mkdir -p $UPGRADE_DIR
 	if [ $? -eq 0 ]; then
 	   mv -f /tmp/rpi-eeprom.tcz* ${UPGRADE_DIR}
 	else
