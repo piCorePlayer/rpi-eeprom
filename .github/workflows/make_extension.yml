@@ -29,7 +29,7 @@ jobs:
             const release = await github.rest.repos.getLatestRelease({ owner: 'piCorePlayer', repo: 'rpi-eeprom' });
             const releaseTag = release.data.tag_name;
             const githubTag = releaseTag.startsWith('v') ? releaseTag.slice(1) : releaseTag;
-            console.log('VERSION:', version );  
+            console.log('VERSION:', version );
             console.log('GitHub release version:', githubTag);
             if (version === githubTag) {
               core.setOutput('should_release', 'false');
@@ -40,6 +40,49 @@ jobs:
             }
         env:
           VERSION: ${{ steps.get-version.outputs.VERSION }}
+
+      - name: Find newest 2711 firmware
+        id: fw2711
+        run: |
+          dir=rpi_eeprom_git/firmware-2711/default
+          newest=$(ls "$dir"/pieeprom-*.bin 2>/dev/null | sort -V | tail -n1 || true)
+          if [ -z "$newest" ]; then
+            basename="(none)"
+          else
+            basename=$(basename "$newest")
+          fi
+          echo "file=${basename}" >> $GITHUB_OUTPUT
+
+      - name: Find newest 2712 firmware
+        id: fw2712
+        run: |
+          dir=rpi_eeprom_git/firmware-2712/default
+          newest=$(ls "$dir"/pieeprom-*.bin 2>/dev/null | sort -V | tail -n1 || true)
+          if [ -z "$newest" ]; then
+            basename="(none)"
+          else
+            basename=$(basename "$newest")
+          fi
+          echo "file=${basename}" >> $GITHUB_OUTPUT
+
+      - name: Build release_notes.md
+        id: build_notes
+        run: |
+          cat > release_notes.md <<EOF
+          Default 2711 firmware: ${{ steps.fw2711.outputs.file }}
+          Default 2712 firmware: ${{ steps.fw2712.outputs.file }}
+          EOF
+          echo "notes_path=release_notes.md" >> $GITHUB_OUTPUT
+          # expose the file contents as a multiline step output so it can be used as the release body
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          cat release_notes.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Show review (for logs)
+        run: |
+          echo "---- release_notes.md ----"
+          cat release_notes.md
+          echo "--------------------------"
 
       - name: Copy Code
         if: steps.current-release.outputs.should_release == 'true'
@@ -94,9 +137,11 @@ jobs:
         with:
           tag_name: v${{ steps.get-version.outputs.VERSION }}
           name: Release v${{ steps.get-version.outputs.VERSION }}
+          body: ${{ steps.build_notes.outputs.notes }}
           draft: false
           prerelease: false
           files: |
             rpi-eeprom.tcz
             rpi-eeprom.tcz.md5.txt
             rpi-eeprom.tcz.list
+            release_notes.md
