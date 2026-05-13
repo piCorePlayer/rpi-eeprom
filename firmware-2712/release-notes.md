@@ -1,5 +1,44 @@
 # Raspberry Pi5 bootloader EEPROM release notes
 
+## 2026-05-11: 2712: Promote 2026-05-11 to the default release (default)
+
+## 2026-05-11: 2712: Set bootloader mfg verison id to 1 (latest)
+
+* 2712: Set bootloader mfg verison id to 1
+  Advance the minimum version id to 1 to indicate support for new SDRAM
+  variants.
+* Add MFG_VER string for rpi-eeprom-update minver check
+  On new boards, the minimum recommended version will be written
+  to OTP. This will allow rpi-eeprom-update to check the minimum
+  recommended version required by the hardware against the version
+  field embedded in EEPROM image binary.
+  strings pieeeprom.bin | grep 'MFG_VER:'
+* pi5: Record hardware board information in OTP
+  On Pi5 report minimal bootloader version via device-tree under
+  /proc/device-tree/chosen/rpi-min-boot-ver.
+
+## 2026-04-30: 2712: arm_boot: Enable turbo clocks before loading the kernel (latest)
+
+* arm_display: Correct logging message hdmi_pixel_freq_limit
+  Noticed in a raspinfo log file.
+* Increase default v3d frqeuency on 2712d0
+* pi5: arm_boot: Enable turbo clocks before loading the kernel
+  Originally, for the entire boot ran at the idle-operating
+  point. Subsequently, the default for intial_turbo was changed so
+  that the kernel is started with turbo-clocks unless disabled
+  via config.txt.
+  This change enables the turbo-clocks as soon as it is safe as soon
+  as the turbo voltage has been calibrated to speedup kernel loading
+  and device-tree processing.
+  This reduces boot time by approximately 1 second on a Pi5 booting
+  from NVMe.
+
+## 2026-04-27: Broadcom SDRAM firmware update to 4.72 (latest)
+
+Broadcom SDRAM firmware update to 4.72
+
+Update the Broadcom SDRAM firmware to 4.72 to support additional memory variants.
+
 ## 2026-04-14: Update recovery.bin to support more SDRAM variants (latest)
 
 * Update the slow (non tuned) DDR init used by recovery.bin to support
