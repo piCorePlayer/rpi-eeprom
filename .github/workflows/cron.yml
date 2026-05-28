@@ -52,7 +52,13 @@ jobs:
             const raspiOSVersion = Versionline.split('~')[0];
             console.log('Parsed version:', raspiOSVersion);
 
-            const release = await github.rest.repos.getLatestRelease({ owner: 'piCorePlayer', repo: 'rpi-eeprom' });
+            const release = await github.rest.repos.getLatestRelease({
+              owner: 'piCorePlayer',
+              repo: 'rpi-eeprom',
+              headers: {
+                'X-GitHub-Api-Version': '2026-03-10'
+              }
+            });
             const releaseTag = release.data.tag_name;
 
             const githubTag = releaseTag.startsWith('v') ? releaseTag.slice(1) : releaseTag;
@@ -72,6 +78,9 @@ jobs:
                  ref: 'pCP',
                  inputs: {
                    raspiOSVersion
+                 },
+                 headers: {
+                   'X-GitHub-Api-Version': '2026-03-10'
                  }
                });
             }
