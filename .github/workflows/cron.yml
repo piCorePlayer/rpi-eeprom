@@ -11,7 +11,7 @@ jobs:
     if: ${{ github.repository_owner == 'piCorePlayer' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/github-script@v8
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
         with:
           script: |
             const package = await fetch('https://archive.raspberrypi.org/debian/dists/trixie/main/binary-arm64/Packages');
