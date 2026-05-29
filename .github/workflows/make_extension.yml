@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
         with:
           ref: pCP
           path: rpi_eeprom_git
@@ -22,7 +22,7 @@ jobs:
 
       - name: Check Current Release
         id: current-release
-        uses: actions/github-script@v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
         with:
           script: |
             const version = process.env.VERSION
@@ -131,7 +131,7 @@ jobs:
       - name: Create a Release in a GitHub Action
         if: steps.current-release.outputs.should_release == 'true'
         id: create_release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda
         env:
           GITHUB_TOKEN: ${{ secrets.RPI_EEPROM_RELEASE }}
         with:
