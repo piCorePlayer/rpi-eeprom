@@ -8,11 +8,11 @@ on:
         required: true
         type: string
 
-permissions:
-  contents: write
-
 jobs:
   merge-upstream:
+    permissions:
+      contents: write
+      actions: write
     name: Merge Upstream
     if: github.repository == 'piCorePlayer/rpi-eeprom' && github.ref_name == 'pCP'
     runs-on: ubuntu-latest
@@ -55,5 +55,8 @@ jobs:
 
       - name: Run workflow make_extension
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh workflow run make_extension.yml --repo piCorePlayer/rpi-eeprom --ref pCP
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run make_extension.yml \
+            --repo piCorePlayer/rpi-eeprom \
+            --ref "${{ github.ref_name }}"
