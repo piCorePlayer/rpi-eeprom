@@ -93,12 +93,35 @@ elif [ ! -f /usr/local/bin/lspci ]; then
 	tce-load -i pciutils.tcz
 fi
 
-[ -f ${PACKAGEDIR}/python3.6.tcz ] && PYTHON3PKG=python3.6.tcz
-[ -f ${PACKAGEDIR}/python3.8.tcz ] && PYTHON3PKG=python3.8.tcz
-[ -f ${PACKAGEDIR}/python3.11.tcz ] && PYTHON3PKG=python3.11.tcz
-[ -f ${PACKAGEDIR}/python3.12.tcz ] && PYTHON3PKG=python3.12.tcz
+PY_MIN_VER=8
+highest=""
+
+for f in "${PACKAGEDIR}"/python3.*.tcz; do
+	[ -e "$f" ] || continue  # no matches
+
+	base=$(basename "$f")          # python3.14.tcz
+	minor=${base#python3.}         # 14.tcz
+	minor=${minor%.tcz}            # 14
+
+	case "$minor" in
+		''|*[!0-9]*) continue ;;     # skip non-numeric
+	esac
+
+	if [ "$minor" -ge "$PY_MIN_VER" ]; then
+		if [ -z "$highest" ] || [ "$minor" -gt "$highest" ]; then
+			highest="$minor"
+		fi
+	fi
+done
+
+if [ -n "$highest" ]; then
+	PYTHON3PKG="python3.${highest}.tcz"
+else
+	PYTHON3PKG=""
+fi
+
 if [ ! -f ${PACKAGEDIR}/$PYTHON3PKG ]; then
-	echo "python 3 extension is required for this tool"
+	echo "python 3 verison $PY_MIN_VER or higher is required for this tool"
 	exit 1
 elif [ ! -f /usr/local/bin/python3 ]; then
 	tce-load -i $PYTHON3PKG
