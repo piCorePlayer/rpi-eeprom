@@ -3,84 +3,12 @@ name: Version Check
 on:
   workflow_dispatch:
   schedule:
-    - cron:  '20 3 * * *'
+    - cron: '20 3 * * *'
 
 jobs:
-  Check:
-    name: Check if update needed
-    if: ${{ github.repository_owner == 'piCorePlayer' || github.event_name == 'workflow_dispatch' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
-        with:
-          script: |
-            const package = await fetch('https://archive.raspberrypi.org/debian/dists/trixie/main/binary-arm64/Packages');
-            if (!package.ok) {
-              console.error('Fetching Packages failed' + package.status);
-              return false;
-            }
-
-            const Packages = await package.text();
-            const lines = Packages.split('\n');
-            var found = 0;
-            for (let i = 0; i < lines.length; i++) {
-              if (lines[i].indexOf('Package: rpi-eeprom') == 0 && lines[i].length <= 20 ) {
-                console.log ('Package Line: ', lines[i]);
-                found = i;
-                break;
-              }
-            }
-            if (found > 0) {
-              for (let i = found; i < lines.length; i++) {
-                if (lines[i].indexOf('Version: ') != -1 ) {
-                  if ( i > found + 20 ) {
-                    console.log('Version range incorrect');
-                    return false;
-                  } else {
-                    found = i;
-                    console.log('Version Line: ', lines[i]);
-                    break;
-                  }
-                }
-              }
-            } else {
-              console.log('Package rpi-eeprom not found');
-              return false;
-            }
-
-            const Versionline = lines[found].split(': ')[1];
-            const raspiOSVersion = Versionline.split('~')[0];
-            console.log('Parsed version:', raspiOSVersion);
-
-            const release = await github.rest.repos.getLatestRelease({
-              owner: 'piCorePlayer',
-              repo: 'rpi-eeprom',
-              headers: {
-                'X-GitHub-Api-Version': '2026-03-10'
-              }
-            });
-            const releaseTag = release.data.tag_name;
-
-            const githubTag = releaseTag.startsWith('v') ? releaseTag.slice(1) : releaseTag;
-            const githubVersion = githubTag.split('-').slice(0, 2).join('-');
-
-            console.log('Changelog version:', raspiOSVersion);
-            console.log('GitHub release version:', githubVersion);
-
-            if (raspiOSVersion === githubVersion) {
-                console.log('Versions match!');
-            } else {
-               console.log('Versions differ, triggering update workflow...');
-               await github.rest.actions.createWorkflowDispatch({
-                 owner: 'piCorePlayer',
-                 repo: 'rpi-eeprom',
-                 workflow_id: 'merge_upstream.yml',
-                 ref: 'pCP',
-                 inputs: {
-                   raspiOSVersion
-                 },
-                 headers: {
-                   'X-GitHub-Api-Version': '2026-03-10'
-                 }
-               });
-            }
+  release:
+    if: github.repository == 'piCorePlayer/rpi-eeprom' && github.ref_name == 'pCP'
+    uses: ./.github/workflows/merge_upstream.yml
+    permissions:
+      contents: write
+    secrets: inherit
