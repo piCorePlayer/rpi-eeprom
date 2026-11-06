@@ -34,6 +34,9 @@ elif action == "edit" and "--draft=false" in args:
     if os.environ.get("FAIL_PUBLISH") == tag:
         sys.exit("Simulated publication failure")
     state[tag]["draft"] = False
+    if "--latest" in args:
+        for release in state.values():
+            release["latest"] = False
     state[tag]["latest"] = "--latest" in args
 state_file.write_text(json.dumps(state))
 """
@@ -117,8 +120,43 @@ class ReleasePipelineTest(unittest.TestCase):
         path.write_text(content)
 
     def run_cmd(self, *args, cwd=None, env=None, check=True):
-        return subprocess.run(args, cwd=cwd, env=env, check=check, text=True,
-                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        trace = (os.environ.get("PCP_RELEASE_TEST_VERBOSE") == "1"
+                 and len(args) > 1 and args[0] == "bash"
+                 and args[1] in (str(CHECK), str(PACKAGE)))
+        if trace:
+            print(f"\n[{self._testMethodName}] Running {Path(args[1]).name}"
+                  f" {' '.join(args[2:])} (isolated fixtures)", flush=True)
+            self.print_release_state("Before")
+        result = subprocess.run(args, cwd=cwd, env=env, check=False, text=True,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if trace:
+            print(f"Script exit status: {result.returncode}", flush=True)
+            for label, output in (("stdout", result.stdout), ("stderr", result.stderr)):
+                if output:
+                    print(f"{label}:\n{output.rstrip()}", flush=True)
+            self.print_release_state("After")
+        if check and result.returncode:
+            raise subprocess.CalledProcessError(
+                result.returncode, args, output=result.stdout, stderr=result.stderr)
+        return result
+
+    def print_release_state(self, label):
+        print(f"{label}:", flush=True)
+        for title, repo, pattern in (("Upstream fixture tags", self.upstream, "*"),
+                                     ("Local pCP release tags", self.repo, "v*-pCP")):
+            tags = self.git(repo, "tag", "--list", pattern, "--sort=version:refname")
+            print(f"  {title}:", flush=True)
+            for tag in tags.splitlines():
+                commit = self.git(repo, "rev-parse", "--short", f"{tag}^{{commit}}")
+                print(f"    {tag} -> {commit}", flush=True)
+        print("  Simulated GitHub releases:", flush=True)
+        for tag, release in json.loads(self.state.read_text()).items():
+            status = "draft" if release["draft"] else "published"
+            print(f"    {tag}: {status}, latest={release.get('latest', False)}",
+                  flush=True)
+            if "package" in release:
+                print(f"      Package fixture content: {release['package']!r}",
+                      flush=True)
 
     def git(self, cwd, *args):
         return self.run_cmd("git", *args, cwd=cwd).stdout.strip()

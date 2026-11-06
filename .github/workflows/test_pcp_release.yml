@@ -15,4 +15,6 @@ jobs:
     steps:
       - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
       - name: Test release pipeline
+        env:
+          PCP_RELEASE_TEST_VERBOSE: '1'
         run: python3 -m unittest discover -s test -p 'test_release_pipeline.py'

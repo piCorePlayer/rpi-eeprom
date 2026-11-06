@@ -25,7 +25,20 @@ which needs permission to write repository contents.
 
 To test without publishing, run the **Test pCP Release Pipeline** workflow
 (`test_pcp_release.yml`) manually on `pCP`, or run
-`python3 -m unittest discover -s test -p 'test_release_pipeline.py'` locally.
+`python3 -m unittest discover -s test -p 'test_release_pipeline.py'` from the
+repository root (use `-s .` if already inside `test/`).
 These tests use temporary Git repositories and mocked packaging and GitHub
 commands; they do not push to GitHub or create real releases. The upstream
 `test.yml` workflow is not used for pCP release testing.
+
+For detailed test output, enable the optional trace:
+
+```sh
+PCP_RELEASE_TEST_VERBOSE=1 python3 -m unittest discover -s test -p 'test_release_pipeline.py' -v
+```
+
+The trace shows fixture upstream and local release tags with commit hashes
+before and after each script invocation, captured script output, exit status,
+and simulated draft/published releases with their package fixture content.
+These are synthetic test tags, not the live Raspberry Pi or piCorePlayer
+tags. Tracing does not enable real pushes, packaging, or release publication.
