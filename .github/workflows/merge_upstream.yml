@@ -1,62 +1,31 @@
-name: Merge Upstream Repository
-# This only is called from Version Check
+name: Merge and Release Upstream Tags
 
 on:
+  workflow_call:
   workflow_dispatch:
-    inputs:
-      raspiOSVersion:
-        required: true
-        type: string
 
 jobs:
-  merge-upstream:
-    permissions:
-      contents: write
-      actions: write
-    name: Merge Upstream
+  release:
     if: github.repository == 'piCorePlayer/rpi-eeprom' && github.ref_name == 'pCP'
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: write
+    concurrency:
+      group: pcp-eeprom-release
+      cancel-in-progress: false
     steps:
-      - name: Checkout your repository
+      - name: Checkout pCP
         uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
         with:
-          ref: ${{ github.ref_name }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-          # Need to fetch everything due to past history differences
-          fetch-depth: '0'
+          ref: pCP
+          fetch-depth: 0
 
-      - name: Set up Git
+      - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Add upstream remote
-        run: |
-          git remote add upstream https://github.com/raspberrypi/rpi-eeprom.git
-          git fetch upstream
-
-      - name: Merge upstream branch
-        run: |
-          git merge --no-ff --strategy=ort --allow-unrelated-histories --no-edit upstream/master || { echo "Merge conflict detected"; git status; git diff; exit 1; }
-
-      - name: Push merge commit to your repo
+      - name: Process upstream releases
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git push origin HEAD:${{ github.ref_name }}
-
-      - name: Update package version
-        run: |
-          sed -i 's/\(VERSION=\).*/\1\"${{ github.event.inputs.raspiOSVersion }}-pCP\"/' pcp-rpi-eeprom-update
-          git add pcp-rpi-eeprom-update
-          git commit -m "Update Version for Release ${{ github.event.inputs.raspiOSVersion }}-pCP"
-          git push origin HEAD:${{ github.ref_name }}
-
-      - name: Run workflow make_extension
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh workflow run make_extension.yml \
-            --repo piCorePlayer/rpi-eeprom \
-            --ref "${{ github.ref_name }}"
+          GH_TOKEN: ${{ secrets.RPI_EEPROM_RELEASE }}
+        run: bash .github/scripts/check-upstream-releases.sh

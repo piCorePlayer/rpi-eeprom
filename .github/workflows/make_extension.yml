@@ -2,146 +2,30 @@ name: Release Extension
 
 on:
   workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing pCP release tag to package or resume
+        required: true
+        type: string
 
 jobs:
-  build:
-    name: Create Extension
-    if: ${{ github.repository_owner == 'piCorePlayer' || github.event_name == 'workflow_dispatch' }}
+  release:
+    if: github.repository == 'piCorePlayer/rpi-eeprom' && github.ref_name == 'pCP'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: pcp-eeprom-release
+      cancel-in-progress: false
     steps:
-      - name: Checkout code
+      - name: Checkout pCP
         uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
         with:
           ref: pCP
-          path: rpi_eeprom_git
+          fetch-depth: 0
 
-      - name: Get Current Version
-        id: get-version
-        run: |
-          grep "^VERSION=" rpi_eeprom_git/pcp-rpi-eeprom-update | tr -d '"' >> $GITHUB_OUTPUT
-
-      - name: Check Current Release
-        id: current-release
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
-        with:
-          script: |
-            const version = process.env.VERSION
-            const release = await github.rest.repos.getLatestRelease({ owner: 'piCorePlayer', repo: 'rpi-eeprom' });
-            const releaseTag = release.data.tag_name;
-            const githubTag = releaseTag.startsWith('v') ? releaseTag.slice(1) : releaseTag;
-            console.log('VERSION:', version );
-            console.log('GitHub release version:', githubTag);
-            if (version === githubTag) {
-              core.setOutput('should_release', 'false');
-              console.log('Versions match! Skipping release.');
-            } else {
-              core.setOutput('should_release', 'true');
-              console.log('Versions different...releasing!');
-            }
+      - name: Package and publish tag
         env:
-          VERSION: ${{ steps.get-version.outputs.VERSION }}
-
-      - name: Find newest 2711 firmware
-        id: fw2711
-        run: |
-          dir=rpi_eeprom_git/firmware-2711/default
-          newest=$(ls "$dir"/pieeprom-*.bin 2>/dev/null | sort -V | tail -n1 || true)
-          if [ -z "$newest" ]; then
-            basename="(none)"
-          else
-            basename=$(basename "$newest")
-          fi
-          echo "file=${basename}" >> $GITHUB_OUTPUT
-
-      - name: Find newest 2712 firmware
-        id: fw2712
-        run: |
-          dir=rpi_eeprom_git/firmware-2712/default
-          newest=$(ls "$dir"/pieeprom-*.bin 2>/dev/null | sort -V | tail -n1 || true)
-          if [ -z "$newest" ]; then
-            basename="(none)"
-          else
-            basename=$(basename "$newest")
-          fi
-          echo "file=${basename}" >> $GITHUB_OUTPUT
-
-      - name: Build release_notes.md
-        id: build_notes
-        run: |
-          cat > release_notes.md <<EOF
-          Default 2711 firmware: ${{ steps.fw2711.outputs.file }}
-          Default 2712 firmware: ${{ steps.fw2712.outputs.file }}
-          EOF
-          echo "notes_path=release_notes.md" >> $GITHUB_OUTPUT
-          # expose the file contents as a multiline step output so it can be used as the release body
-          echo "notes<<EOF" >> $GITHUB_OUTPUT
-          cat release_notes.md >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-      - name: Show review (for logs)
-        run: |
-          echo "---- release_notes.md ----"
-          cat release_notes.md
-          echo "--------------------------"
-
-      - name: Copy Code
-        if: steps.current-release.outputs.should_release == 'true'
-        run: |
-          mkdir -p sqfs-root/usr/local/lib/firmware/raspberrypi
-          mkdir -p sqfs-root/usr/local/bin
-          mkdir -p sqfs-root/etc/default
-          mkdir -p sqfs-root/usr/local/share/rpi-eeprom
-
-          # Copy executables
-          cp rpi_eeprom_git/rpi-eeprom-config sqfs-root/usr/local/bin/
-          cp rpi_eeprom_git/rpi-eeprom-digest sqfs-root/usr/local/bin/
-          cp rpi_eeprom_git/rpi-eeprom-update sqfs-root/usr/local/bin/
-          cp rpi_eeprom_git/pcp-rpi-eeprom-* sqfs-root/usr/local/bin/
-          cp rpi_eeprom_git/tools/rpi* sqfs-root/usr/local/bin/
-          chmod 755 sqfs-root/usr/local/bin/*
- 
-          # Copy default variables
-          cp rpi_eeprom_git/rpi-eeprom-update-default-pcp sqfs-root/etc/default/rpi-eeprom-update
-
-          # Copy License file
-          cp rpi_eeprom_git/LICENSE sqfs-root/usr/local/share/rpi-eeprom
-
-          # Copy Firmware, removing archived firmware
-          cp -av rpi_eeprom_git/firmware-2711 sqfs-root/usr/local/lib/firmware/raspberrypi
-          rm -rf sqfs-root/usr/local/lib/firmware/raspberrypi/firmware-2711/old
-          mv sqfs-root/usr/local/lib/firmware/raspberrypi/firmware-2711 sqfs-root/usr/local/lib/firmware/raspberrypi/bootloader-2711
-
-          cp -av rpi_eeprom_git/firmware-2712 sqfs-root/usr/local/lib/firmware/raspberrypi
-          rm -rf sqfs-root/usr/local/lib/firmware/raspberrypi/firmware-2712/old
-          mv sqfs-root/usr/local/lib/firmware/raspberrypi/firmware-2712 sqfs-root/usr/local/lib/firmware/raspberrypi/bootloader-2712
-
-      - name: Create Extension
-        id: make_tcz
-        if: steps.current-release.outputs.should_release == 'true'
-        run: |
-          mksquashfs ./sqfs-root rpi-eeprom.tcz -b 16384
-          md5sum rpi-eeprom.tcz > rpi-eeprom.tcz.md5.txt
-
-      - name: List Extension
-        if: steps.current-release.outputs.should_release == 'true'
-        run: |
-          unsquashfs -ll rpi-eeprom.tcz
-          unsquashfs -l rpi-eeprom.tcz | sed 's|squashfs-root/||' > rpi-eeprom.tcz.list
-
-      - name: Create a Release in a GitHub Action
-        if: steps.current-release.outputs.should_release == 'true'
-        id: create_release
-        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda
-        env:
-          GITHUB_TOKEN: ${{ secrets.RPI_EEPROM_RELEASE }}
-        with:
-          tag_name: v${{ steps.get-version.outputs.VERSION }}
-          name: Release v${{ steps.get-version.outputs.VERSION }}
-          body: ${{ steps.build_notes.outputs.notes }}
-          draft: false
-          prerelease: false
-          files: |
-            rpi-eeprom.tcz
-            rpi-eeprom.tcz.md5.txt
-            rpi-eeprom.tcz.list
-            release_notes.md
+          GH_TOKEN: ${{ secrets.RPI_EEPROM_RELEASE }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: bash .github/scripts/package-release.sh "$RELEASE_TAG"
