@@ -54,7 +54,16 @@ while IFS= read -r version; do
         exit 1
     fi
 
-    git merge --no-ff --strategy=ort --allow-unrelated-histories --no-edit "$upstream"
+    # The workflow token cannot push workflow file changes, so keep our own copy of .github/workflows.
+    pre_merge=$(git rev-parse HEAD)
+    if [[ "$upstream" != "$previous" ]]; then
+        git merge --no-ff --no-commit --strategy=ort --allow-unrelated-histories "$upstream"
+        git rm -rqf --ignore-unmatch -- .github/workflows
+        if git ls-tree -r --name-only "$pre_merge" -- .github/workflows | grep -q .; then
+            git checkout "$pre_merge" -- .github/workflows
+        fi
+        git commit --no-edit
+    fi
     sed -i "s/^VERSION=.*/VERSION=\"${version}-pCP\"/" pcp-rpi-eeprom-update
     if ! grep -Fxq "VERSION=\"${version}-pCP\"" pcp-rpi-eeprom-update; then
         echo "Could not update the package version." >&2
